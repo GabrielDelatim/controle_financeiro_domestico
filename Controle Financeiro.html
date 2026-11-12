@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6f8">
+<title>Finanças da Casa</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f4f6f8;--surface:#fff;--surface-2:#f8fafb;--ink:#17232d;--muted:#71808c;
+  --line:#e5eaee;--accent:#315f83;--accent-soft:#eaf1f7;
+  --income:#16856b;--income-soft:#e8f5f0;--expense:#c65361;--expense-soft:#fbecef;
+  --shadow:0 8px 28px rgba(25,45,60,.055);--radius:18px;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;--bg:#101a21;--surface:#182630;--surface-2:#1e303b;--ink:#edf3f6;
+  --muted:#9aabb5;--line:#2b414d;--accent:#8eb9dc;--accent-soft:#243d50;
+  --income:#55c5a2;--income-soft:#1b3b35;--expense:#ff8793;--expense-soft:#442a32;
+  --shadow:0 8px 28px rgba(0,0,0,.16);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px}
+main{width:min(100% - 32px,900px);margin:0 auto;padding:28px 0 56px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:14px;background:var(--accent);color:white;display:grid;place-items:center;font-size:21px;font-weight:800}
+h1{font-size:1.15rem;line-height:1.2;margin:0;font-weight:750;letter-spacing:-.02em}
+.subtitle{font-size:.82rem;color:var(--muted);margin-top:3px}
+.header-actions{display:flex;gap:8px}
+.icon-btn,.secondary-btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;min-height:40px;padding:0 12px}
+.icon-btn{width:42px;padding:0;font-size:1.1rem}
+.monthbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+.month-nav{display:flex;align-items:center;gap:8px}
+.month-nav strong{min-width:165px;text-align:center;font-size:1rem;text-transform:capitalize}
+.today-btn{font-size:.85rem;color:var(--accent);border:0;background:transparent;padding:8px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.overview{padding:22px;margin-bottom:24px}
+.overview-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.eyebrow{font-size:.82rem;color:var(--muted);font-weight:600}
+.balance{font-size:clamp(2rem,7vw,3rem);font-weight:800;letter-spacing:-.055em;line-height:1.2;margin:5px 0 18px;font-variant-numeric:tabular-nums}
+.balance.negative{color:var(--expense)}
+.balance-caption{font-size:.78rem;color:var(--muted);margin-top:2px}
+.flowbar{height:9px;border-radius:99px;overflow:hidden;background:var(--surface-2);display:flex}
+.flowbar span:first-child{background:var(--income)}.flowbar span:last-child{background:var(--expense)}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.metric{padding:13px 14px;border-radius:14px;background:var(--surface-2);min-width:0}
+.metric-label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.83rem}
+.metric-dot{width:8px;height:8px;border-radius:50%}
+.metric strong{display:block;font-size:clamp(1.05rem,3vw,1.3rem);margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.income-text{color:var(--income)}.expense-text{color:var(--expense)}
+.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 11px}
+h2{font-size:1rem;margin:0;font-weight:750;letter-spacing:-.015em}
+.section-note{font-size:.78rem;color:var(--muted)}
+.form-panel{padding:18px}
+form{display:grid;gap:14px}
+.segment{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:13px}
+.segment button{border:0;background:transparent;color:var(--muted);padding:10px;border-radius:9px;font-weight:700}
+.segment button.active[data-type="in"]{background:var(--income);color:#fff}
+.segment button.active[data-type="out"]{background:var(--expense);color:#fff}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label.field{display:grid;gap:6px;color:var(--muted);font-size:.82rem;font-weight:650;min-width:0}
+input,select{width:100%;min-width:0;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:11px;padding:11px 12px;min-height:44px}
+input::placeholder{color:color-mix(in srgb,var(--muted) 70%,transparent)}
+.category-suggestions{display:flex;flex-wrap:wrap;gap:7px;margin-top:-5px}
+.category-suggestions button{border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:99px;padding:6px 11px;font-size:.78rem}
+.category-suggestions button.selected{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.checkline{display:flex;align-items:center;gap:9px;color:var(--ink);font-size:.88rem}
+.checkline input{width:18px;height:18px;min-height:0;accent-color:var(--accent)}
+.recurring-options{display:none;gap:12px;padding:13px;border:1px dashed var(--line);border-radius:12px;background:var(--surface-2)}
+.recurring-options.show{display:grid}
+.form-message{display:none;margin:0;color:var(--expense);font-size:.82rem}
+.form-message.show{display:block}
+.form-actions{display:flex;gap:9px;flex-wrap:wrap}
+.primary-btn{border:0;border-radius:12px;background:var(--accent);color:white;font-weight:750;padding:12px 18px;min-height:46px}
+:root[data-theme="dark"] .primary-btn{color:#10202a}
+.secondary-btn{font-weight:650}
+.delete-btn{color:var(--expense);border-color:color-mix(in srgb,var(--expense) 45%,var(--line))}
+.edit-note{display:none;color:var(--accent);font-size:.82rem;margin:0}
+.edit-note.show{display:block}
+.summary-panel{padding:17px;display:grid;gap:18px}
+.summary-group{display:grid;gap:10px}
+.summary-title{display:flex;justify-content:space-between;gap:12px;font-size:.85rem;font-weight:750}
+.category-row{display:grid;gap:5px}
+.category-meta{display:flex;justify-content:space-between;gap:10px;font-size:.82rem}
+.category-meta span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.category-meta span:last-child{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.category-track{height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.category-track span{display:block;height:100%;border-radius:99px}
+.list-tools{display:flex;gap:9px;align-items:center}
+.search{max-width:230px}
+.transaction-list{list-style:none;padding:0;margin:0;overflow:hidden}
+.transaction{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:13px 15px;border-bottom:1px solid var(--line)}
+.transaction:last-child{border-bottom:0}
+.transaction-dot{width:9px;height:9px;border-radius:50%}
+.transaction-info{min-width:0}
+.transaction-info strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}
+.transaction-info small{display:block;color:var(--muted);font-size:.77rem;margin-top:2px}
+.transaction-value{font-size:.88rem;font-weight:750;white-space:nowrap;font-variant-numeric:tabular-nums}
+.row-actions{display:flex;gap:3px}
+.row-actions button{width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--muted)}
+.row-actions button:hover{background:var(--surface-2);color:var(--ink)}
+.empty{padding:28px 18px;text-align:center;color:var(--muted);font-size:.88rem}
+.helper{font-size:.78rem;color:var(--muted);margin:12px 2px 0}
+dialog{width:min(92vw,380px);border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:20px;box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(10,20,28,.48)}
+dialog p{margin:0 0 16px}
+.dialog-actions{display:grid;gap:8px}
+@media(max-width:600px){
+ main{width:min(100% - 22px,900px);padding-top:17px}
+ header{margin-bottom:19px}
+ .overview{padding:18px}
+ .form-panel{padding:14px}
+ .transaction{grid-template-columns:9px minmax(0,1fr) auto}
+ .row-actions{grid-column:2 / -1;justify-content:flex-end;margin-top:-5px}
+ .transaction-value{grid-column:3;grid-row:1}
+ .list-tools{width:100%}.search{max-width:none;flex:1}
+ .section-heading:has(.list-tools){align-items:flex-start;flex-direction:column}
+}
+@media(max-width:390px){.field-grid{grid-template-columns:1fr}.month-nav strong{min-width:135px}.today-btn{padding:6px}}
+@media(prefers-reduced-motion:no-preference){button,.panel{transition:background .18s,border-color .18s,transform .18s}.primary-btn:hover{filter:brightness(1.06)}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">↗</div>
+      <div><h1>Finanças da Casa</h1><div class="subtitle">Organize entradas, saídas e recorrências</div></div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeToggle" type="button" aria-label="Alternar tema" title="Alternar tema">☾</button>
+    </div>
+  </header>
+
+  <div class="monthbar">
+    <div class="month-nav">
+      <button class="icon-btn" id="prev" type="button" aria-label="Mês anterior">‹</button>
+      <strong id="monthLabel"></strong>
+      <button class="icon-btn" id="next" type="button" aria-label="Próximo mês">›</button>
+    </div>
+    <button class="today-btn" id="today" type="button">Mês atual</button>
+  </div>
+
+  <section class="panel overview" aria-live="polite">
+    <div class="overview-top">
+      <div><div class="eyebrow">Saldo do mês</div><div class="balance" id="balance">R$ 0,00</div></div>
+      <div class="balance-caption" id="balanceCaption">Entradas menos saídas</div>
+    </div>
+    <div class="flowbar" aria-label="Proporção entre entradas e saídas"><span id="incomeBar" style="width:50%"></span><span id="expenseBar" style="width:50%"></span></div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label"><i class="metric-dot" style="background:var(--income)"></i>Entradas</div><strong class="income-text" id="incomeTotal">R$ 0,00</strong></div>
+      <div class="metric"><div class="metric-label"><i class="metric-dot" style="background:var(--expense)"></i>Saídas</div><strong class="expense-text" id="expenseTotal">R$ 0,00</strong></div>
+    </div>
+  </section>
+
+  <div class="section-heading"><h2 id="formTitle">Adicionar lançamento</h2><span class="section-note">* Campos obrigatórios</span></div>
+  <section class="panel form-panel">
+    <form id="transactionForm" novalidate>
+      <div class="segment" role="group" aria-label="Tipo de lançamento">
+        <button type="button" class="active" data-type="in">＋ Entrada</button>
+        <button type="button" data-type="out">− Saída</button>
+      </div>
+      <label class="field">Descrição *
+        <input id="description" required maxlength="60" placeholder="Ex.: Salário, aluguel, mercado">
+      </label>
+      <div class="field-grid">
+        <label class="field">Valor (R$) *
+          <input id="amount" required inputmode="decimal" placeholder="0,00" autocomplete="off">
+        </label>
+        <label class="field">Data *
+          <input id="date" type="date" required>
+        </label>
+      </div>
+      <label class="field">Categoria *
+        <input id="category" required maxlength="30" autocomplete="off" placeholder="Ex.: Moradia, alimentação">
+      </label>
+      <div class="category-suggestions" id="categorySuggestions" aria-label="Categorias utilizadas"></div>
+      <label class="checkline"><input type="checkbox" id="recurring"> Repetir este lançamento</label>
+      <div class="recurring-options" id="recurringOptions">
+        <label class="field">Repetir por quantos meses?
+          <input id="months" type="number" min="2" max="360" value="12">
+        </label>
+        <label class="checkline"><input type="checkbox" id="indefinite"> Sem prazo definido</label>
+      </div>
+      <p class="edit-note" id="editNote"></p>
+      <p class="form-message" id="formMessage" role="alert"></p>
+      <div class="form-actions">
+        <button class="primary-btn" id="saveButton" type="submit">Adicionar lançamento</button>
+        <button class="secondary-btn" id="cancelEdit" type="button" hidden>Cancelar</button>
+        <button class="secondary-btn delete-btn" id="deleteEditing" type="button" hidden>Excluir</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="section-heading"><h2>Resumo por categoria</h2><span class="section-note">No mês selecionado</span></div>
+  <section class="panel summary-panel" id="categorySummary"></section>
+
+  <div class="section-heading">
+    <h2>Lançamentos</h2>
+    <div class="list-tools"><input class="search" id="search" type="search" placeholder="Buscar lançamento…" aria-label="Buscar lançamento"></div>
+  </div>
+  <section class="panel">
+    <ul class="transaction-list" id="transactionList"></ul>
+  </section>
+  <p class="helper">Os dados ficam salvos neste navegador. Lançamentos recorrentes são exibidos nos meses correspondentes. Ao excluir uma recorrência, você pode remover apenas o mês selecionado ou toda a série. Recomendamos exportar ou manter uma cópia de segurança dos dados do navegador.</p>
+</main>
+
+<dialog id="deleteDialog">
+  <p id="deleteMessage"></p>
+  <div class="dialog-actions">
+    <button class="secondary-btn" id="deleteOnly" type="button">Somente este mês</button>
+    <button class="primary-btn" id="deleteAll" type="button">Excluir lançamento</button>
+    <button class="secondary-btn" id="deleteCancel" type="button">Cancelar</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = "fin-items";
+const THEME_KEY = "fin-theme";
+const brl = value => Number(value || 0).toLocaleString("pt-BR", {style:"currency",currency:"BRL"});
+const monthIndex = (year, month) => year * 12 + month;
+const today = new Date();
+let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+let transactions = loadTransactions();
+let type = "in";
+let editingId = null;
+let pendingDelete = null;
+
+function loadTransactions(){
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter(item =>
+      item && item.id && (item.type === "in" || item.type === "out") &&
+      typeof item.desc === "string" && typeof item.cat === "string" &&
+      Number.isFinite(Number(item.amount)) && item.date
+    ) : [];
+  } catch(error) { return []; }
+}
+function persist(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    return true;
+  } catch(error) {
+    showMessage("Não foi possível salvar. Verifique o espaço disponível no navegador.");
+    return false;
+  }
+}
+function escapeHTML(value){
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[char]);
+}
+function startMonth(item){
+  const [year, month] = item.date.split("-").map(Number);
+  return monthIndex(year, month - 1);
+}
+function appearsInMonth(item, index){
+  const start = startMonth(item);
+  if ((item.skip || []).includes(index)) return false;
+  return item.rec ? index >= start && (!item.months || index < start + item.months) : index === start;
+}
+function monthTransactions(){
+  return transactions.filter(item => appearsInMonth(item, monthIndex(currentMonth.getFullYear(), currentMonth.getMonth())));
+}
+function categories(){
+  const seen = new Map();
+  transactions.filter(item => item.type === type).forEach(item => {
+    const key = item.cat.trim().toLocaleLowerCase("pt-BR");
+    if (key && !seen.has(key)) seen.set(key, item.cat);
+  });
+  return [...seen.values()].sort((a,b) => a.localeCompare(b,"pt-BR"));
+}
+function showMessage(message){
+  $("formMessage").textContent = message;
+  $("formMessage").classList.add("show");
+}
+function clearMessage(){ $("formMessage").textContent = ""; $("formMessage").classList.remove("show"); }
+
+function setType(nextType){
+  type = nextType;
+  document.querySelectorAll(".segment button").forEach(button => {
+    button.classList.toggle("active", button.dataset.type === type);
+    button.setAttribute("aria-pressed", String(button.dataset.type === type));
+  });
+  renderCategorySuggestions();
+}
+function renderCategorySuggestions(){
+  const current = $("category").value.trim().toLocaleLowerCase("pt-BR");
+  $("categorySuggestions").innerHTML = categories().map(category =>
+    `<button type="button" data-category="${escapeHTML(category)}" class="${category.toLocaleLowerCase("pt-BR") === current ? "selected" : ""}">${escapeHTML(category)}</button>`
+  ).join("");
+}
+function renderSummary(list){
+  const groups = ["out","in"].map(kind => {
+    const totals = new Map();
+    list.filter(item => item.type === kind).forEach(item => totals.set(item.cat,(totals.get(item.cat)||0)+Number(item.amount)));
+    const entries = [...totals.entries()].sort((a,b)=>b[1]-a[1]);
+    const total = entries.reduce((sum,entry)=>sum+entry[1],0);
+    if (!entries.length) return "";
+    const title = kind === "out" ? "Saídas por categoria" : "Entradas por categoria";
+    const color = kind === "out" ? "var(--expense)" : "var(--income)";
+    return `<div class="summary-group"><div class="summary-title"><span>${title}</span><span>${brl(total)}</span></div>
+      ${entries.map(([name,value])=>`<div class="category-row"><div class="category-meta"><span>${escapeHTML(name)}</span><span>${brl(value)} · ${Math.round(value/total*100)}%</span></div><div class="category-track"><span style="width:${value/total*100}%;background:${color}"></span></div></div>`).join("")}
+    </div>`;
+  }).filter(Boolean);
+  $("categorySummary").innerHTML = groups.length ? groups.join("") : '<div class="empty">Ainda não há lançamentos neste mês.</div>';
+}
+function render(){
+  const list = monthTransactions().sort((a,b)=>a.date.localeCompare(b.date)||a.desc.localeCompare(b.desc,"pt-BR"));
+  const income = list.filter(item=>item.type==="in").reduce((sum,item)=>sum+Number(item.amount),0);
+  const expense = list.filter(item=>item.type==="out").reduce((sum,item)=>sum+Number(item.amount),0);
+  const balance = income-expense;
+  $("monthLabel").textContent = currentMonth.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+  $("balance").textContent = brl(balance);
+  $("balance").classList.toggle("negative",balance<0);
+  $("balanceCaption").textContent = balance < 0 ? "Despesas acima das entradas" : "Entradas menos saídas";
+  $("incomeTotal").textContent = brl(income);
+  $("expenseTotal").textContent = brl(expense);
+  const total = income+expense;
+  $("incomeBar").style.width = total ? `${income/total*100}%` : "50%";
+  $("expenseBar").style.width = total ? `${expense/total*100}%` : "50%";
+  renderSummary(list);
+
+  const query = $("search").value.trim().toLocaleLowerCase("pt-BR");
+  const filtered = list.filter(item => `${item.desc} ${item.cat}`.toLocaleLowerCase("pt-BR").includes(query));
+  $("transactionList").innerHTML = filtered.length ? filtered.map(item => {
+    const monthNumber = monthIndex(currentMonth.getFullYear(),currentMonth.getMonth())-startMonth(item)+1;
+    const recurrence = item.rec ? `<span> · ${item.months ? `${monthNumber}/${item.months}` : "recorrente"}</span>` : "";
+    const day = Number(item.date.slice(8,10));
+    return `<li class="transaction">
+      <span class="transaction-dot" style="background:${item.type==="in"?"var(--income)":"var(--expense)"}"></span>
+      <div class="transaction-info"><strong>${escapeHTML(item.desc)}</strong><small>Dia ${day} · ${escapeHTML(item.cat)}${recurrence}</small></div>
+      <span class="transaction-value ${item.type==="in"?"income-text":"expense-text"}">${item.type==="in"?"+":"−"} ${brl(item.amount)}</span>
+      <div class="row-actions"><button type="button" data-edit="${escapeHTML(item.id)}" aria-label="Editar ${escapeHTML(item.desc)}" title="Editar">✎</button><button type="button" data-delete="${escapeHTML(item.id)}" aria-label="Excluir ${escapeHTML(item.desc)}" title="Excluir">×</button></div>
+    </li>`;
+  }).join("") : `<li class="empty">${query ? "Nenhum lançamento encontrado para essa busca." : "Nenhum lançamento neste mês. Adicione uma entrada ou saída para começar."}</li>`;
+}
+function resetForm(){
+  editingId = null;
+  $("transactionForm").reset();
+  $("date").value = formatDate(today);
+  $("months").value = 12;
+  $("months").disabled = false;
+  $("recurringOptions").classList.remove("show");
+  $("formTitle").textContent = "Adicionar lançamento";
+  $("saveButton").textContent = "Adicionar lançamento";
+  $("cancelEdit").hidden = true;
+  $("deleteEditing").hidden = true;
+  $("editNote").classList.remove("show");
+  clearMessage();
+  setType("in");
+  $("category").value = "";
+  renderCategorySuggestions();
+}
+function formatDate(date){
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+function editTransaction(item){
+  editingId = item.id;
+  setType(item.type);
+  $("description").value = item.desc;
+  $("amount").value = Number(item.amount).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  $("date").value = item.date;
+  $("category").value = item.cat;
+  $("recurring").checked = Boolean(item.rec);
+  $("recurringOptions").classList.toggle("show",Boolean(item.rec));
+  $("months").value = item.months || 12;
+  $("indefinite").checked = Boolean(item.rec && !item.months);
+  $("months").disabled = $("indefinite").checked;
+  $("formTitle").textContent = "Editar lançamento";
+  $("saveButton").textContent = "Salvar alterações";
+  $("cancelEdit").hidden = false;
+  $("deleteEditing").hidden = false;
+  $("editNote").textContent = item.rec ? "Este lançamento faz parte de uma recorrência. As alterações serão aplicadas a toda a série." : "";
+  $("editNote").classList.toggle("show",Boolean(item.rec));
+  clearMessage();
+  renderCategorySuggestions();
+  $("transactionForm").scrollIntoView({behavior:"smooth",block:"start"});
+  $("description").focus({preventScroll:true});
+}
+function requestDelete(item){
+  if (!item) return;
+  pendingDelete = item;
+  const recurring = Boolean(item.rec);
+  $("deleteMessage").textContent = recurring ? `“${item.desc}” é recorrente. Como deseja excluir?` : `Deseja excluir “${item.desc}”?`;
+  $("deleteOnly").hidden = !recurring;
+  $("deleteAll").textContent = recurring ? "Excluir toda a recorrência" : "Excluir lançamento";
+  $("deleteDialog").showModal();
+}
+function deleteAll(){
+  if (!pendingDelete) return;
+  transactions = transactions.filter(item=>item.id!==pendingDelete.id);
+  persist();
+  if (editingId===pendingDelete.id) resetForm();
+  pendingDelete=null;
+  $("deleteDialog").close();
+  render();
+}
+function parseAmount(value){
+  let normalized = value.trim().replace(/\s/g,"");
+  if (normalized.includes(",")) normalized = normalized.replace(/\./g,"").replace(",",".");
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : NaN;
+}
+
+document.querySelectorAll(".segment button").forEach(button=>button.addEventListener("click",()=>{
+  setType(button.dataset.type);
+  $("category").value="";
+  renderCategorySuggestions();
+}));
+$("category").addEventListener("input",renderCategorySuggestions);
+$("categorySuggestions").addEventListener("click",event=>{
+  const button=event.target.closest("button[data-category]");
+  if (!button) return;
+  $("category").value=button.dataset.category;
+  renderCategorySuggestions();
+});
+$("recurring").addEventListener("change",()=>{
+  $("recurringOptions").classList.toggle("show",$("recurring").checked);
+});
+$("indefinite").addEventListener("change",()=>{$("months").disabled=$("indefinite").checked;});
+$("transactionForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  clearMessage();
+  const desc=$("description").value.trim(), cat=$("category").value.trim();
+  const amount=parseAmount($("amount").value), date=$("date").value;
+  if (!desc || !cat || !date || !(amount>0)){showMessage("Preencha descrição, categoria, data e informe um valor maior que zero.");return;}
+  if ($("recurring").checked && !$("indefinite").checked && (+$("months").value<2 || +$("months").value>360)){showMessage("A recorrência deve ter entre 2 e 360 meses.");return;}
+  const existingCategory=categories().find(value=>value.toLocaleLowerCase("pt-BR")===cat.toLocaleLowerCase("pt-BR"));
+  const data={type,desc,amount,date,cat:existingCategory||cat,rec:$("recurring").checked,months:$("recurring").checked?($("indefinite").checked?0:Number($("months").value)):1};
+  if (editingId){
+    const existing=transactions.find(item=>item.id===editingId);
+    if (existing) Object.assign(existing,data);
+  } else {
+    transactions.push({id:crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,...data});
+  }
+  if (!persist()) return;
+  const [year,month]=date.split("-").map(Number);
+  currentMonth=new Date(year,month-1,1);
+  resetForm();
+  render();
+});
+$("transactionList").addEventListener("click",event=>{
+  const editButton=event.target.closest("[data-edit]");
+  const deleteButton=event.target.closest("[data-delete]");
+  if (editButton){const item=transactions.find(entry=>entry.id===editButton.dataset.edit);if(item)editTransaction(item);}
+  if (deleteButton){const item=transactions.find(entry=>entry.id===deleteButton.dataset.delete);requestDelete(item);}
+});
+$("cancelEdit").addEventListener("click",resetForm);
+$("deleteEditing").addEventListener("click",()=>requestDelete(transactions.find(item=>item.id===editingId)));
+$("deleteOnly").addEventListener("click",()=>{
+  if (!pendingDelete) return;
+  const index=monthIndex(currentMonth.getFullYear(),currentMonth.getMonth());
+  pendingDelete.skip=[...(pendingDelete.skip||[]),index];
+  persist();
+  pendingDelete=null;
+  $("deleteDialog").close();
+  if (editingId) resetForm();
+  render();
+});
+$("deleteAll").addEventListener("click",deleteAll);
+$("deleteCancel").addEventListener("click",()=>{$("deleteDialog").close();pendingDelete=null;});
+$("prev").addEventListener("click",()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()-1,1);render();});
+$("next").addEventListener("click",()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+1,1);render();});
+$("today").addEventListener("click",()=>{currentMonth=new Date(today.getFullYear(),today.getMonth(),1);render();});
+$("search").addEventListener("input",render);
+function applyTheme(theme){
+  document.documentElement.dataset.theme=theme;
+  $("themeToggle").textContent=theme==="dark"?"☀":"☾";
+  $("themeToggle").setAttribute("aria-label",theme==="dark"?"Ativar tema claro":"Ativar tema escuro");
+  try{localStorage.setItem(THEME_KEY,theme);}catch(error){}
+}
+const savedTheme=(()=>{try{return localStorage.getItem(THEME_KEY);}catch(error){return null;}})();
+applyTheme(savedTheme || (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+$("themeToggle").addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
+
+$("date").value=formatDate(today);
+renderCategorySuggestions();
+render();
+</script>
+</body>
+</html>
