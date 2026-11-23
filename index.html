@@ -86,6 +86,37 @@
     h1 { margin: 0; font-size: 1.14rem; line-height: 1.2; font-weight: 800; letter-spacing: -.035em; }
     .brand-subtitle { margin-top: 4px; color: var(--muted); font-size: .8rem; }
     .header-actions { display: flex; gap: 8px; align-items: center; }
+    .cloud-status { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 9px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); background: var(--surface); font-size: .68rem; font-weight: 750; white-space: nowrap; }
+    .cloud-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #9aa6b2; }
+    .cloud-status[data-state="ok"]::before { background: var(--income); }
+    .cloud-status[data-state="pending"]::before { background: #d69a36; }
+    .cloud-status[data-state="error"]::before { background: var(--expense); }
+    .account-button { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .auth-gate { display: none; min-height: 100svh; padding: 24px; place-items: center; background: var(--bg); }
+    .auth-gate:not([hidden]) { display: grid; }
+    .auth-card { width: min(100%, 430px); padding: 26px; border: 1px solid var(--line); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); }
+    .auth-card h2 { margin: 0 0 7px; font-size: 1.35rem; letter-spacing: -.03em; }
+    .auth-card p { color: var(--muted); font-size: .86rem; margin: 0 0 20px; }
+    .auth-card form { display: grid; gap: 13px; }
+    .auth-card .field input { min-height: 48px; }
+    .auth-actions { display: grid; gap: 9px; margin-top: 5px; }
+    .auth-mode { display: flex; gap: 8px; margin: 0 0 17px; }
+    .auth-mode button { flex: 1; min-height: 39px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-soft); color: var(--muted); font-size: .8rem; font-weight: 750; }
+    .auth-mode button.active { color: var(--accent-strong); border-color: var(--accent); background: var(--accent-soft); }
+    .auth-message { min-height: 20px; margin: 12px 0 0 !important; color: var(--muted); font-size: .78rem !important; }
+    .auth-message.error { color: var(--expense); }
+    .auth-footnote { margin-top: 17px !important; font-size: .72rem !important; }
+    .cloud-required .app-shell, .cloud-required .bottom-nav { display: none !important; }
+    .cloud-required .auth-gate { display: grid !important; }
+    .cloud-config-warning { margin: 0 0 16px; padding: 11px 13px; border: 1px solid color-mix(in srgb, #d69a36 45%, var(--line)); border-radius: 13px; color: var(--muted); background: color-mix(in srgb, #d69a36 8%, var(--surface)); font-size: .78rem; }
+    @media (max-width: 600px) {
+      .header-actions { gap: 6px; }
+      .cloud-status { width: 25px; min-height: 28px; padding: 0; justify-content: center; overflow: hidden; font-size: 0; }
+      .account-button { width: 38px; max-width: 38px; min-height: 38px; padding: 0; overflow: hidden; font-size: 0; }
+      .account-button::before { content: "👤"; font-size: 1rem; }
+      #installButton { width: 38px; min-height: 38px; padding: 0; overflow: hidden; font-size: 0; }
+      #installButton .button-icon { font-size: 1rem; }
+    }
     .icon-button, .quiet-button {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       min-height: 42px; border: 1px solid var(--line); border-radius: 13px;
@@ -343,6 +374,34 @@
   </style>
 </head>
 <body>
+  <section class="auth-gate" id="authGate" hidden aria-labelledby="authHeading">
+    <div class="auth-card">
+      <div class="brand" style="margin-bottom:20px">
+        <div class="brand-mark" aria-hidden="true">↗</div>
+        <div><h1>Finanças da Casa</h1><div class="brand-subtitle">Sincronização segura em nuvem</div></div>
+      </div>
+      <h2 id="authHeading">Acesse suas finanças</h2>
+      <p>Entre com sua conta para acessar os lançamentos sincronizados entre seus dispositivos.</p>
+      <div class="auth-mode" role="group" aria-label="Tipo de acesso">
+        <button type="button" class="active" id="authSignInMode">Entrar</button>
+        <button type="button" id="authSignUpMode">Criar conta</button>
+      </div>
+      <form id="authForm">
+        <label class="field">E-mail
+          <input type="email" id="authEmail" required autocomplete="email" placeholder="seuemail@exemplo.com">
+        </label>
+        <label class="field">Senha
+          <input type="password" id="authPassword" required minlength="8" autocomplete="current-password" placeholder="Mínimo de 8 caracteres">
+        </label>
+        <div class="auth-actions">
+          <button class="primary-button" type="submit" id="authSubmit">Entrar</button>
+        </div>
+      </form>
+      <p class="auth-message" id="authMessage" role="status" aria-live="polite"></p>
+      <p class="auth-footnote">Se a confirmação de e-mail estiver ativada no Supabase, confirme o endereço antes de fazer o primeiro acesso.</p>
+    </div>
+  </section>
+
   <main class="app-shell">
     <header class="app-header">
       <div class="brand">
@@ -352,6 +411,8 @@
         <div><h1>Finanças da Casa</h1><div class="brand-subtitle">Seu dinheiro, em ordem.</div></div>
       </div>
       <div class="header-actions">
+        <span class="cloud-status" id="cloudStatus" data-state="local" title="Status da sincronização">Só neste aparelho</span>
+        <button class="quiet-button account-button" id="accountButton" type="button" aria-label="Conta e sincronização">Conta</button>
         <button class="quiet-button" id="installButton" type="button" aria-label="Instalar aplicativo"><span class="button-icon" aria-hidden="true">⇩</span> Instalar</button>
         <button class="icon-button" id="themeToggle" type="button" aria-label="Alternar tema" title="Alternar tema">☾</button>
       </div>
@@ -483,7 +544,7 @@
         <input type="file" id="importBackup" accept="application/json,.json" hidden>
       </div>
     </details>
-    <footer class="app-footer">Finanças da Casa · Seus registros permanecem neste dispositivo.</footer>
+    <footer class="app-footer">Finanças da Casa · Seus registros são sincronizados com sua conta quando a conexão em nuvem está ativa.</footer>
   </main>
 
   <nav class="bottom-nav" aria-label="Navegação principal">
@@ -518,6 +579,8 @@
     <div class="dialog-actions"><button class="primary-button" id="installDialogClose" type="button">Entendi</button></div>
   </dialog>
 
+  <script src="./supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
   "use strict";
   const $ = id => document.getElementById(id);
@@ -547,6 +610,24 @@
   let toastTimer = null;
   let deferredInstallPrompt = null;
 
+  // Supabase: o navegador usa apenas a chave pública (anon/publishable). RLS protege os dados.
+  const SUPABASE_CONFIG = window.SUPABASE_CONFIG || {};
+  const SUPABASE_TABLE = "user_finances";
+  const supabaseConfigured = /^https:\/\//.test(SUPABASE_CONFIG.url || "") &&
+    typeof SUPABASE_CONFIG.anonKey === "string" && SUPABASE_CONFIG.anonKey.length > 20 &&
+    !/COLE_|SUA_CHAVE|YOUR_|PROJECT_URL/i.test(`${SUPABASE_CONFIG.url} ${SUPABASE_CONFIG.anonKey}`);
+  let supabaseClient = null;
+  let currentUser = null;
+  let cloudSyncTimer = null;
+  let cloudSyncInProgress = false;
+  let cloudSyncPending = false;
+  let hydratingCloud = false;
+  let cloudReady = false;
+  let offlineLocalChanges = false;
+  let reconnectingCloud = false;
+  let lastKnownCloudUpdatedAt = null;
+  let authMode = "signin";
+
   function loadTransactions() {
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -554,8 +635,14 @@
     } catch (error) { return []; }
   }
   function persist() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); return true; }
-    catch (error) { showToast("Não foi possível salvar. Exporte um backup e confira o espaço do navegador."); return false; }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      if (!hydratingCloud) {
+        if (currentUser && (!navigator.onLine || !cloudReady)) offlineLocalChanges = true;
+        scheduleCloudSync();
+      }
+      return true;
+    } catch (error) { showToast("Não foi possível salvar. Exporte um backup e confira o espaço do navegador."); return false; }
   }
   function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
@@ -608,7 +695,16 @@
     try { const saved=JSON.parse(localStorage.getItem(CATEGORY_KEY)||"null"); return Array.isArray(saved)?saved.filter(x=>typeof x==="string"&&x.trim()):[...new Set([...defaultCategories,...transactions.map(item=>item.cat).filter(Boolean)])]; }
     catch(error) { return [...defaultCategories]; }
   }
-  function persistCategories() { try { localStorage.setItem(CATEGORY_KEY,JSON.stringify(customCategories)); return true; } catch(error) { showToast("Não foi possível salvar as categorias."); return false; } }
+  function persistCategories() {
+    try {
+      localStorage.setItem(CATEGORY_KEY,JSON.stringify(customCategories));
+      if (!hydratingCloud) {
+        if (currentUser && (!navigator.onLine || !cloudReady)) offlineLocalChanges = true;
+        scheduleCloudSync();
+      }
+      return true;
+    } catch(error) { showToast("Não foi possível salvar as categorias."); return false; }
+  }
   function categories() { return [...customCategories].sort((a,b)=>a.localeCompare(b,"pt-BR")); }
   function renderCategoryPresets() {
     const current = $("category").value.trim().toLocaleLowerCase("pt-BR");
@@ -684,6 +780,387 @@
     renderWeek(); renderSummary(list); renderTransactions();
   }
   function clearMessage(){ $("formMessage").textContent=""; $("formMessage").classList.remove("show"); }
+  function setCloudStatus(label, state="local") {
+    const element = $("cloudStatus");
+    if (!element) return;
+    element.textContent = label;
+    element.dataset.state = state;
+    element.title = label;
+    element.setAttribute("aria-label", `Status da sincronização: ${label}`);
+  }
+  function setAuthMessage(message, isError=false) {
+    const element = $("authMessage");
+    element.textContent = message || "";
+    element.classList.toggle("error", Boolean(isError));
+  }
+  function setAuthMode(mode) {
+    authMode = mode;
+    const signingIn = mode === "signin";
+    $("authHeading").textContent = signingIn ? "Acesse suas finanças" : "Crie sua conta";
+    $("authSubmit").textContent = signingIn ? "Entrar" : "Criar conta";
+    $("authPassword").autocomplete = signingIn ? "current-password" : "new-password";
+    $("authSignInMode").classList.toggle("active", signingIn);
+    $("authSignUpMode").classList.toggle("active", !signingIn);
+    setAuthMessage(signingIn ? "" : "Use um e-mail válido e uma senha com pelo menos 8 caracteres.");
+  }
+  function showAuthGate(message="") {
+    $("authGate").hidden = false;
+    document.body.classList.add("cloud-required");
+    if (message) setAuthMessage(message);
+  }
+  function hideAuthGate() {
+    $("authGate").hidden = true;
+    document.body.classList.remove("cloud-required");
+  }
+  function cacheCloudData(data) {
+    hydratingCloud = true;
+    try {
+      transactions = Array.isArray(data.transactions) ? data.transactions.filter(item => item && item.id && (item.type === "in" || item.type === "out") && typeof item.desc === "string" && typeof item.cat === "string" && Number.isFinite(Number(item.amount)) && item.date) : [];
+      customCategories = Array.isArray(data.categories) ? data.categories.filter(value => typeof value === "string" && value.trim()) : [...defaultCategories];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      localStorage.setItem(CATEGORY_KEY, JSON.stringify(customCategories));
+      localStorage.setItem("fin-cloud-owner", currentUser.id);
+      lastKnownCloudUpdatedAt = data.updated_at || null;
+      if (lastKnownCloudUpdatedAt) localStorage.setItem("fin-cloud-updated-at", lastKnownCloudUpdatedAt);
+      cloudReady = true;
+      offlineLocalChanges = false;
+      render();
+      renderCategoryPresets();
+    } finally { hydratingCloud = false; }
+  }
+  function localDataHasUserContent() {
+    return transactions.length > 0 || customCategories.some(category => !defaultCategories.includes(category));
+  }
+  async function activateCloudSession(session) {
+    if (!session?.user) return false;
+    currentUser = session.user;
+    cloudReady = false;
+    offlineLocalChanges = false;
+    $("accountButton").textContent = (currentUser.email || "Conta").split("@")[0];
+    $("accountButton").title = currentUser.email || "Conta conectada";
+    setCloudStatus("Conectando...", "pending");
+    setAuthMessage("Carregando seus dados na nuvem...");
+
+    const { data: cloudData, error } = await supabaseClient
+      .from(SUPABASE_TABLE)
+      .select("user_id, transactions, categories, updated_at")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+    if (error) {
+      const connectionIssue = !navigator.onLine || /fetch|network|timeout|connection|load failed/i.test(error.message || "");
+      if (connectionIssue) {
+        const previousOwner = localStorage.getItem("fin-cloud-owner");
+        if (previousOwner && previousOwner !== currentUser.id) {
+          transactions = [];
+          customCategories = [...defaultCategories];
+          hydratingCloud = true;
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+            localStorage.setItem(CATEGORY_KEY, JSON.stringify(customCategories));
+          } finally { hydratingCloud = false; }
+        }
+        lastKnownCloudUpdatedAt = localStorage.getItem("fin-cloud-updated-at") || null;
+        offlineLocalChanges = localDataHasUserContent();
+        cloudReady = false;
+        hideAuthGate();
+        setCloudStatus("Offline · local", "pending");
+        render();
+        renderCategoryPresets();
+        showToast("Sem internet. Os dados ficam neste aparelho e serão sincronizados ao reconectar.");
+        return true;
+      }
+      currentUser = null;
+      setCloudStatus("Falha na conexão", "error");
+      setAuthMessage(`Não foi possível carregar seus dados: ${error.message}. Verifique a configuração SQL e as políticas RLS do Supabase.`, true);
+      return false;
+    }
+
+    if (cloudData) {
+      const previousOwner = localStorage.getItem("fin-cloud-owner");
+      if (!previousOwner && localDataHasUserContent()) {
+        const shouldMerge = confirm(`Esta conta já possui dados na nuvem e este navegador também contém ${transactions.length} lançamento(s) locais.
+
+Deseja mesclar os registros locais que ainda não existem na nuvem e unir as categorias? Os registros com o mesmo identificador serão mantidos pela versão da nuvem.`);
+        if (shouldMerge) {
+          const mergedTransactions = new Map((Array.isArray(cloudData.transactions) ? cloudData.transactions : []).map(item => [String(item.id), item]));
+          transactions.forEach(item => { if (!mergedTransactions.has(String(item.id))) mergedTransactions.set(String(item.id), item); });
+          const mergedCategories = [...new Set([...(Array.isArray(cloudData.categories) ? cloudData.categories : []), ...customCategories])];
+          const mergedRow = {
+            user_id: currentUser.id,
+            transactions: [...mergedTransactions.values()],
+            categories: mergedCategories,
+            updated_at: new Date().toISOString()
+          };
+          const { error: mergeError } = await supabaseClient.from(SUPABASE_TABLE).upsert(mergedRow, { onConflict: "user_id" });
+          if (mergeError) {
+            currentUser = null;
+            setCloudStatus("Falha na migração", "error");
+            setAuthMessage(`Não foi possível mesclar os dados locais: ${mergeError.message}`, true);
+            return false;
+          }
+          cacheCloudData(mergedRow);
+          setCloudStatus("Sincronizado", "ok");
+          hideAuthGate();
+          showToast("Dados locais e da nuvem foram mesclados.");
+          return true;
+        }
+      }
+      cacheCloudData(cloudData);
+      setCloudStatus("Sincronizado", "ok");
+      hideAuthGate();
+      showToast("Dados carregados da nuvem.");
+      return true;
+    }
+
+    // Primeira entrada: importa dados locais apenas com consentimento e sem trocar de conta no mesmo navegador.
+    const previousOwner = localStorage.getItem("fin-cloud-owner");
+    const canImportLocal = (!previousOwner || previousOwner === currentUser.id) && localDataHasUserContent();
+    if (canImportLocal) {
+      const count = transactions.length;
+      const shouldImport = confirm(`Esta conta ainda não possui dados na nuvem. Foram encontrados ${count} lançamento(s) neste navegador. Deseja importar também suas categorias e lançamentos locais para esta conta?
+
+Escolha Cancelar para não misturar os dados locais com esta conta.`);
+      if (!shouldImport) {
+        await supabaseClient.auth.signOut();
+        currentUser = null;
+        setAuthMessage("Importação cancelada. Entre novamente quando quiser configurar a conta em nuvem.");
+        return false;
+      }
+    } else if (previousOwner && previousOwner !== currentUser.id) {
+      // Não transfere automaticamente dados locais pertencentes a outra conta.
+      transactions = [];
+      customCategories = [...defaultCategories];
+    }
+
+    const initialPayload = {
+      user_id: currentUser.id,
+      transactions,
+      categories: customCategories,
+      updated_at: new Date().toISOString()
+    };
+    const { error: insertError } = await supabaseClient.from(SUPABASE_TABLE).upsert(initialPayload, { onConflict: "user_id" });
+    if (insertError) {
+      currentUser = null;
+      setCloudStatus("Falha ao salvar", "error");
+      setAuthMessage(`Não foi possível iniciar seus dados: ${insertError.message}`, true);
+      return false;
+    }
+    hydratingCloud = true;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      localStorage.setItem(CATEGORY_KEY, JSON.stringify(customCategories));
+      localStorage.setItem("fin-cloud-owner", currentUser.id);
+      localStorage.setItem("fin-cloud-updated-at", initialPayload.updated_at);
+    } finally { hydratingCloud = false; }
+    lastKnownCloudUpdatedAt = initialPayload.updated_at;
+    cloudReady = true;
+    offlineLocalChanges = false;
+    render();
+    renderCategoryPresets();
+    setCloudStatus("Sincronizado", "ok");
+    hideAuthGate();
+    showToast(canImportLocal ? "Dados locais importados para a nuvem." : "Conta conectada à nuvem.");
+    return true;
+  }
+  async function flushCloudSync() {
+    if (!currentUser || !supabaseClient) return true;
+    if (!navigator.onLine || !cloudReady) {
+      setCloudStatus("Aguardando conexão", "pending");
+      return false;
+    }
+    if (cloudSyncInProgress) { cloudSyncPending = true; return false; }
+    cloudSyncInProgress = true;
+    let succeeded = true;
+    try {
+      do {
+        cloudSyncPending = false;
+        const userId = currentUser?.id;
+        if (!userId) break;
+        setCloudStatus("Salvando...", "pending");
+        const payload = {
+          user_id: userId,
+          transactions: JSON.parse(JSON.stringify(transactions)),
+          categories: [...customCategories],
+          updated_at: new Date().toISOString()
+        };
+        const { error } = await supabaseClient.from(SUPABASE_TABLE).upsert(payload, { onConflict: "user_id" });
+        if (error) {
+          succeeded = false;
+          offlineLocalChanges = true;
+          setCloudStatus("Pendente", "error");
+          showToast("Não foi possível sincronizar. Os dados continuam salvos neste aparelho.");
+          console.error("Erro ao sincronizar Supabase:", error);
+          break;
+        }
+        if (currentUser?.id === userId) {
+          lastKnownCloudUpdatedAt = payload.updated_at;
+          localStorage.setItem("fin-cloud-updated-at", payload.updated_at);
+          offlineLocalChanges = false;
+          setCloudStatus("Sincronizado", "ok");
+        }
+      } while (cloudSyncPending);
+    } catch (error) {
+      succeeded = false;
+      offlineLocalChanges = true;
+      setCloudStatus("Pendente", "error");
+      console.error("Falha ao enviar dados ao Supabase:", error);
+    } finally { cloudSyncInProgress = false; }
+    return succeeded;
+  }
+  function scheduleCloudSync() {
+    if (!currentUser || hydratingCloud) return;
+    if (!navigator.onLine || !cloudReady) {
+      setCloudStatus("Aguardando conexão", "pending");
+      return;
+    }
+    setCloudStatus("Aguardando envio", "pending");
+    clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = setTimeout(flushCloudSync, 650);
+  }
+  async function reconnectCloudSession() {
+    if (!currentUser || !supabaseClient || !navigator.onLine || reconnectingCloud) return;
+    reconnectingCloud = true;
+    setCloudStatus("Verificando nuvem...", "pending");
+    try {
+      const { data, error } = await supabaseClient.from(SUPABASE_TABLE)
+        .select("user_id, transactions, categories, updated_at")
+        .eq("user_id", currentUser.id).maybeSingle();
+      if (error) throw error;
+      if (data && offlineLocalChanges) {
+        const remoteChanged = !lastKnownCloudUpdatedAt || data.updated_at !== lastKnownCloudUpdatedAt;
+        if (remoteChanged) {
+          const keepLocal = confirm(`A versão na nuvem mudou enquanto este aparelho estava offline.
+
+OK: manter as alterações deste aparelho e enviá-las para a nuvem (a versão remota será substituída).
+Cancelar: carregar a versão da nuvem e descartar as alterações locais pendentes.`);
+          if (keepLocal) {
+            cloudReady = true;
+            await flushCloudSync();
+          } else {
+            cacheCloudData(data);
+            setCloudStatus("Sincronizado", "ok");
+          }
+        } else {
+          cloudReady = true;
+          await flushCloudSync();
+        }
+      } else if (data) {
+        cacheCloudData(data);
+        setCloudStatus("Sincronizado", "ok");
+      } else {
+        const previousOwner = localStorage.getItem("fin-cloud-owner");
+        if (previousOwner && previousOwner !== currentUser.id) {
+          transactions = [];
+          customCategories = [...defaultCategories];
+          hydratingCloud = true;
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+            localStorage.setItem(CATEGORY_KEY, JSON.stringify(customCategories));
+          } finally { hydratingCloud = false; }
+        } else if (localDataHasUserContent()) {
+          const count = transactions.length;
+          const shouldImport = confirm(`A conta ainda não tem um registro na nuvem. Foram encontrados ${count} lançamento(s) locais.
+
+Deseja importar esses dados para a conta atual?`);
+          if (!shouldImport) {
+            transactions = [];
+            customCategories = [...defaultCategories];
+            hydratingCloud = true;
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+              localStorage.setItem(CATEGORY_KEY, JSON.stringify(customCategories));
+            } finally { hydratingCloud = false; }
+            offlineLocalChanges = false;
+          }
+        }
+        cloudReady = true;
+        await flushCloudSync();
+      }
+    } catch (error) {
+      setCloudStatus("Pendente", "error");
+      showToast("Não foi possível reconectar ao Supabase. Seus dados locais foram preservados.");
+      console.error("Falha ao retomar sincronização:", error);
+    } finally { reconnectingCloud = false; }
+  }
+  async function initializeCloud() {
+    if (!supabaseConfigured) {
+      setCloudStatus("Só neste aparelho", "local");
+      $("accountButton").textContent = "Conta";
+      return;
+    }
+    if (!window.supabase?.createClient) {
+      setCloudStatus("Modo local", "error");
+      $("accountButton").textContent = "Conta";
+      showToast("A biblioteca do Supabase não carregou. Verifique a conexão com a internet.");
+      return;
+    }
+    supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+    });
+    showAuthGate();
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      if (data.session) {
+        await activateCloudSession(data.session);
+      } else {
+        setCloudStatus("Entre para sincronizar", "pending");
+        setAuthMessage("Entre ou crie uma conta para carregar seus dados.");
+      }
+    } catch (error) {
+      setCloudStatus("Falha na conexão", "error");
+      setAuthMessage(`Não foi possível iniciar a conexão: ${error.message}`, true);
+    }
+  }
+  $("authSignInMode").addEventListener("click",()=>setAuthMode("signin"));
+  $("authSignUpMode").addEventListener("click",()=>setAuthMode("signup"));
+  $("authForm").addEventListener("submit",async event=>{
+    event.preventDefault();
+    if (!supabaseClient) { setAuthMessage("Configure o projeto Supabase em supabase-config.js e recarregue a página.", true); return; }
+    const email=$("authEmail").value.trim();
+    const password=$("authPassword").value;
+    if (password.length < 8) { setAuthMessage("A senha precisa ter pelo menos 8 caracteres.", true); return; }
+    $("authSubmit").disabled=true;
+    setAuthMessage(authMode === "signin" ? "Entrando..." : "Criando sua conta...");
+    try {
+      if (authMode === "signup") {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: location.href.split("#")[0] } });
+        if (error) throw error;
+        if (data.session) await activateCloudSession(data.session);
+        else { setAuthMode("signin"); setAuthMessage("Conta criada. Verifique seu e-mail para confirmar o cadastro e depois entre."); }
+      } else {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        await activateCloudSession(data.session);
+      }
+    } catch(error) {
+      setAuthMessage(error.message || "Não foi possível autenticar. Confira seus dados.", true);
+    } finally { $("authSubmit").disabled=false; }
+  });
+  $("accountButton").addEventListener("click",async()=>{
+    if (!supabaseConfigured) {
+      showToast("Preencha URL e chave pública em supabase-config.js para ativar a nuvem.");
+      return;
+    }
+    if (!supabaseClient) {
+      showToast("A biblioteca do Supabase não está disponível. Conecte-se à internet e recarregue.");
+      return;
+    }
+    if (currentUser) {
+      if (!confirm("Deseja sair da sua conta? Os dados sincronizados continuarão salvos na nuvem.")) return;
+      clearTimeout(cloudSyncTimer);
+      const synced = await flushCloudSync();
+      if (!synced) { showToast("Não foi possível confirmar a sincronização. Conecte-se à internet antes de sair."); return; }
+      await supabaseClient.auth.signOut();
+      currentUser=null;
+      showAuthGate("Você saiu da conta. Entre novamente para acessar os dados em nuvem.");
+      setCloudStatus("Desconectado", "pending");
+      $("accountButton").textContent="Conta";
+    } else showAuthGate();
+  });
+  window.addEventListener("online",()=>{ if(currentUser) reconnectCloudSession(); });
+  window.addEventListener("offline",()=>{ if(currentUser) setCloudStatus("Aguardando conexão", "pending"); });
+
   function showMessage(message){ $("formMessage").textContent=message; $("formMessage").classList.add("show"); }
   function resetForm() {
     editingId=null; $("transactionForm").reset(); $("date").value=formatDate(today); $("months").value=12; $("months").disabled=false;
@@ -801,7 +1278,7 @@
 
   // Backup manual em JSON: importar substitui os registros locais após confirmação.
   $("exportBackup").addEventListener("click",()=>{
-    const payload={app:"financas-da-casa",version:2,exportedAt:new Date().toISOString(),transactions,categories:customCategories};
+    const payload={app:"financas-da-casa",version:3,exportedAt:new Date().toISOString(),transactions,categories:customCategories};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const link=document.createElement("a");
     link.href=url;link.download=`backup-financas-${formatDate(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);showToast("Backup exportado.");
   });
@@ -832,6 +1309,7 @@
   $("date").value=formatDate(today);
   renderCategoryPresets();
   render();
+  initializeCloud();
   </script>
 </body>
 </html>

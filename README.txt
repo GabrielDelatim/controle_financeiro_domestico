@@ -1,29 +1,22 @@
-FINANCAS DA CASA — VERSAO PWA CORRIGIDA
+FINANCAS DA CASA — GITHUB PAGES + SUPABASE
 
-ARQUIVOS
-- index.html: aplicacao
-- manifest.webmanifest: configuracao de instalacao PWA
-- sw.js: cache offline e service worker
-- icons/: icones do aplicativo
+INICIO RAPIDO
+1. Crie um projeto Supabase.
+2. Execute o arquivo supabase/setup.sql no SQL Editor.
+3. Configure supabase-config.js com Project URL e chave publica publishable/anon.
+4. Configure Site URL e Redirect URLs em Authentication > URL Configuration.
+5. Publique todos os arquivos na raiz (ou pasta definida) do GitHub Pages.
+6. Abra a URL HTTPS, crie uma conta e entre.
 
-PUBLICACAO NO GITHUB PAGES
-1. Extraia o conteudo deste ZIP.
-2. Envie index.html, manifest.webmanifest, sw.js e a pasta icons para a pasta publicada pelo GitHub Pages (normalmente a raiz do repositorio).
-3. Publique em HTTPS e abra novamente o endereco da aplicacao.
-4. No celular, use o botao Instalar quando aparecer. No iPhone/iPad, use Compartilhar > Adicionar a Tela de Inicio.
+IMPORTANTE: use apenas a chave publishable/anon. Nunca inclua service_role/secret key no frontend ou no GitHub.
 
-RECURSOS
-- Lançamentos por semana, mês ou intervalo personalizado.
-- Gerenciamento de categorias: adicionar e excluir; os lançamentos antigos são preservados.
-- Recorrência mensal para entradas e despesas, com quantidade de meses ou prazo indeterminado.
-- Meses futuros identificados como estimativas e lançamentos previstos.
-- Backup e restauração em JSON.
-- Layout adaptado para celular, navegação inferior e utilização offline após o primeiro carregamento.
+DADOS
+A tabela public.user_finances possui uma linha por usuário e RLS permite que cada usuário acesse somente sua própria linha. O app envia lançamentos e categorias ao Supabase depois de cada alteração. O armazenamento local continua sendo usado como cache/contingência.
 
+MIGRACAO
+No primeiro login, se houver lançamentos locais e a conta ainda não possuir uma linha na nuvem, o app pergunta se deseja importar os dados existentes. Faça backup JSON antes.
 
-DADOS E ATUALIZACAO
-A aplicação continua usando a chave localStorage "fin-items" para os lançamentos e "fin-categories" para categorias. Ao atualizar no MESMO dominio/origem, os registros locais existentes devem continuar disponiveis. Faça um backup antes de publicar a atualização.
-Os dados ficam no navegador/dispositivo; PWA e modo offline não significam sincronização em nuvem. Limpar os dados do site, trocar de navegador/dispositivo ou desinstalar pode remover os dados locais.
+PWA E OFFLINE
+O app shell e o SDK do Supabase são armazenados em cache depois de um primeiro acesso conectado. Login/sincronização inicial exigem internet. Alterações offline ficam no aparelho; ao reconectar, o app confere se a nuvem também mudou e pergunta qual versão manter em caso de conflito.
 
-IMPORTANTE
-Para instalação PWA, publique em HTTPS (GitHub Pages fornece HTTPS). Não abra somente o arquivo HTML localmente: service worker e instalação PWA não funcionam em file://.
+LEIA README.md para as instruções completas e supabase/setup.sql para a estrutura de banco e políticas RLS.
