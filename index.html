@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f7fb">
+  <meta name="description" content="Organize as finanças da casa e acompanhe os gastos da semana.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Finanças da Casa">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <title>Finanças da Casa</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f7f9fc;
+      --surface-raised: #ffffff;
+      --ink: #182536;
+      --muted: #748194;
+      --line: #e7ecf2;
+      --accent: #326b91;
+      --accent-strong: #245674;
+      --accent-soft: #eaf3f8;
+      --income: #16866d;
+      --income-soft: #e8f5f0;
+      --expense: #d45b68;
+      --expense-soft: #fff0f1;
+      --shadow: 0 12px 34px rgba(29, 54, 78, .07);
+      --shadow-soft: 0 5px 18px rgba(29, 54, 78, .045);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #101a24;
+      --surface: #182633;
+      --surface-soft: #1d2e3c;
+      --surface-raised: #203342;
+      --ink: #eef4f8;
+      --muted: #9aabba;
+      --line: #2c4050;
+      --accent: #83b9d8;
+      --accent-strong: #a2cee6;
+      --accent-soft: #243f51;
+      --income: #5ac5a4;
+      --income-soft: #1c3b36;
+      --expense: #ff8994;
+      --expense-soft: #482c36;
+      --shadow: 0 12px 34px rgba(0, 0, 0, .19);
+      --shadow-soft: 0 5px 18px rgba(0, 0, 0, .12);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 18px; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: calc(28px + var(--safe-bottom));
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent) 48%, transparent);
+      outline-offset: 2px;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .app-shell { width: min(100% - 40px, 1120px); margin: 0 auto; padding: 26px 0 56px; }
+    .app-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 26px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      display: grid; place-items: center; width: 46px; height: 46px; flex: 0 0 46px;
+      border-radius: 16px; color: #fff; background: linear-gradient(145deg, #3b7fa4, #285b7a);
+      box-shadow: 0 7px 16px rgba(45, 104, 140, .22);
+    }
+    .brand-mark svg { width: 25px; height: 25px; }
+    h1 { margin: 0; font-size: 1.14rem; line-height: 1.2; font-weight: 800; letter-spacing: -.035em; }
+    .brand-subtitle { margin-top: 4px; color: var(--muted); font-size: .8rem; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .icon-button, .quiet-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 42px; border: 1px solid var(--line); border-radius: 13px;
+      background: var(--surface); color: var(--ink); box-shadow: var(--shadow-soft);
+    }
+    .icon-button { width: 42px; padding: 0; font-size: 1.05rem; }
+    .quiet-button { padding: 0 13px; font-size: .84rem; font-weight: 700; }
+    .month-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 14px; }
+    .period-switcher { display: flex; align-items: center; gap: 8px; }
+    .period-switcher strong { min-width: 160px; text-align: center; text-transform: capitalize; font-size: .98rem; }
+    .today-button { border: 0; background: transparent; color: var(--accent); font-size: .85rem; font-weight: 750; padding: 9px 4px 9px 10px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-xl); box-shadow: var(--shadow-soft); }
+    .overview-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .85fr); gap: 16px; margin-bottom: 18px; }
+    .balance-card { position: relative; overflow: hidden; padding: 24px 26px; color: #fff; border: 0; background: linear-gradient(128deg, #285d7d 0%, #367da0 100%); box-shadow: 0 15px 34px rgba(37, 93, 126, .18); }
+    .balance-card::after { content: ""; position: absolute; width: 250px; height: 250px; border-radius: 50%; right: -75px; top: -130px; background: rgba(255,255,255,.075); }
+    .balance-label { position: relative; z-index: 1; color: rgba(255,255,255,.78); font-size: .85rem; font-weight: 650; }
+    .balance-value { position: relative; z-index: 1; margin: 7px 0 18px; font-size: clamp(2.1rem, 5vw, 3rem); line-height: 1.12; font-weight: 820; letter-spacing: -.06em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .balance-caption { position: relative; z-index: 1; color: rgba(255,255,255,.76); font-size: .79rem; }
+    .balance-card.negative .balance-value { color: #ffe2e5; }
+    .month-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .metric-card { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 20px; }
+    .metric-label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .82rem; font-weight: 650; }
+    .metric-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+    .metric-value { margin-top: 7px; font-size: clamp(1.08rem, 2vw, 1.32rem); font-weight: 800; letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .income-text { color: var(--income); }
+    .expense-text { color: var(--expense); }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 28px 2px 12px; }
+    .section-heading h2 { margin: 0; font-size: 1.04rem; font-weight: 800; letter-spacing: -.025em; }
+    .section-hint { margin-top: 3px; color: var(--muted); font-size: .79rem; }
+    .week-card { padding: 20px 22px 18px; margin-bottom: 8px; }
+    .week-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .week-title { font-weight: 800; font-size: .95rem; }
+    .week-dates { margin-top: 2px; color: var(--muted); font-size: .78rem; }
+    .week-navigation { display: flex; align-items: center; gap: 6px; }
+    .week-navigation .icon-button { width: 34px; min-height: 34px; border-radius: 11px; box-shadow: none; }
+    .week-total-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 15px 0 13px; }
+    .week-total { font-size: clamp(1.55rem, 4vw, 2rem); font-weight: 820; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+    .week-count { color: var(--muted); font-size: .8rem; }
+    .week-chart { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); align-items: end; gap: 8px; min-height: 70px; }
+    .day-column { display: grid; grid-template-rows: 42px auto; align-items: end; justify-items: center; gap: 6px; min-width: 0; }
+    .day-track { display: flex; align-items: end; justify-content: center; width: 100%; height: 42px; }
+    .day-bar { width: min(18px, 70%); min-height: 3px; border-radius: 7px 7px 3px 3px; background: #8bb5ca; transition: height .2s ease; }
+    .day-column.today .day-bar { background: var(--accent); }
+    .day-label { color: var(--muted); font-size: .7rem; font-weight: 700; }
+    .form-panel { padding: 22px; }
+    .form-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+    .form-head h2 { margin: 0; font-size: 1.05rem; font-weight: 820; letter-spacing: -.025em; }
+    .form-head p { margin: 4px 0 0; color: var(--muted); font-size: .8rem; }
+    .type-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 4px; margin-bottom: 16px; border-radius: 14px; background: var(--surface-soft); border: 1px solid var(--line); }
+    .type-switch button { min-height: 43px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font-weight: 750; }
+    .type-switch button.active[data-type="out"] { color: #fff; background: var(--expense); box-shadow: 0 4px 10px rgba(212,91,104,.18); }
+    .type-switch button.active[data-type="in"] { color: #fff; background: var(--income); box-shadow: 0 4px 10px rgba(22,134,109,.16); }
+    .form-grid { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(180px,.65fr); gap: 13px; }
+    .field { display: grid; gap: 7px; min-width: 0; color: var(--muted); font-size: .79rem; font-weight: 750; }
+    .field input { width: 100%; min-width: 0; min-height: 48px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); color: var(--ink); outline-offset: 1px; }
+    .field input::placeholder { color: color-mix(in srgb, var(--muted) 68%, transparent); }
+    .amount-input { font-size: 1.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 13px; }
+    .category-presets { display: flex; flex-wrap: wrap; gap: 7px; margin: 11px 0 0; }
+    .category-chip { min-height: 33px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); background: var(--surface); font-size: .76rem; font-weight: 650; }
+    .category-chip.selected { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: var(--accent-soft); }
+    .manage-categories { display: flex; margin-top: 10px; }
+    .manage-categories button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      min-height: 40px; padding: 0 13px; border: 1px solid var(--line); border-radius: 11px;
+      color: var(--accent-strong); background: var(--accent-soft); font-size: .8rem; font-weight: 750;
+      transition: background .18s, border-color .18s, transform .18s;
+    }
+    .manage-categories button:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent-soft) 78%, var(--surface)); }
+    .manage-categories button:active, .category-add button:active { transform: scale(.98); }
+    .period-custom { display: none; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; padding: 12px 15px; border-bottom: 1px solid var(--line); background: var(--surface); }
+    .period-custom.show { display: grid; }
+    .period-custom label { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: .73rem; font-weight: 750; }
+    .period-custom input { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-soft); font-size: .8rem; }
+    .estimate-banner { display: none; align-items: flex-start; gap: 9px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid color-mix(in srgb, #c58a2d 32%, var(--line)); border-radius: 13px; color: var(--ink); background: color-mix(in srgb, #f3c96d 15%, var(--surface)); font-size: .78rem; }
+    .estimate-banner.show { display: flex; }
+    .future-tag { display: inline-flex; align-items: center; margin-left: 5px; padding: 2px 7px; border-radius: 99px; color: #8b5d14; background: #fff0c9; font-size: .62rem; font-weight: 850; letter-spacing: .035em; vertical-align: middle; white-space: nowrap; }
+    :root[data-theme="dark"] .future-tag { color: #f4d48d; background: #493a20; }
+    .advanced-options { margin-top: 15px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .advanced-options summary { color: var(--muted); font-size: .81rem; font-weight: 700; cursor: pointer; list-style-position: inside; }
+    .advanced-content { display: grid; gap: 10px; padding: 13px 2px 2px; }
+    .inline-check { display: flex; align-items: center; gap: 9px; color: var(--ink); font-size: .82rem; font-weight: 600; }
+    .inline-check input { width: 18px; height: 18px; accent-color: var(--accent); }
+    .recurrence-fields { display: none; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .recurrence-fields.show { display: grid; }
+    .recurrence-fields .field input { min-height: 42px; }
+    .form-message { display: none; color: var(--expense); font-size: .8rem; margin: 12px 0 0; }
+    .form-message.show { display: block; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 17px; }
+    .primary-button, .secondary-button, .danger-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 47px;
+      padding: 0 18px; border-radius: 13px; font-weight: 800; font-size: .86rem;
+    }
+    .primary-button { border: 0; color: #fff; background: var(--accent); box-shadow: 0 6px 14px rgba(50,107,145,.18); }
+    .primary-button:hover { background: var(--accent-strong); }
+    .secondary-button { border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
+    .danger-button { border: 1px solid color-mix(in srgb, var(--expense) 35%, var(--line)); color: var(--expense); background: var(--surface); }
+    .edit-note { display: none; margin: 12px 0 0; color: var(--accent); font-size: .8rem; }
+    .edit-note.show { display: block; }
+    .content-grid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(280px,.8fr); gap: 16px; align-items: start; }
+    .transactions-panel { overflow: hidden; }
+    .list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 17px; border-bottom: 1px solid var(--line); }
+    .filter-tabs { display: flex; gap: 4px; padding: 3px; border-radius: 11px; background: var(--surface-soft); }
+    .filter-tabs button { min-height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: .75rem; font-weight: 750; }
+    .filter-tabs button.active { color: var(--ink); background: var(--surface); box-shadow: 0 2px 6px rgba(20,40,60,.07); }
+    .search-input { width: min(42%, 210px); min-width: 115px; min-height: 38px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--surface-soft); font-size: .8rem; }
+    .transaction-list { list-style: none; padding: 0; margin: 0; }
+    .transaction { display: grid; grid-template-columns: 38px minmax(0,1fr) auto auto; align-items: center; gap: 11px; padding: 13px 17px; border-bottom: 1px solid var(--line); }
+    .transaction:last-child { border-bottom: 0; }
+    .transaction-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; color: var(--expense); background: var(--expense-soft); font-size: .95rem; font-weight: 800; }
+    .transaction-icon.income { color: var(--income); background: var(--income-soft); }
+    .transaction-info { min-width: 0; }
+    .transaction-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .86rem; font-weight: 750; }
+    .transaction-info small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; color: var(--muted); font-size: .74rem; }
+    .transaction-value { white-space: nowrap; font-size: .83rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .row-actions { display: flex; gap: 2px; }
+    .row-actions button { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 9px; color: var(--muted); background: transparent; font-size: .95rem; }
+    .row-actions button:hover { color: var(--ink); background: var(--surface-soft); }
+    .summary-panel { padding: 18px; }
+    .summary-panel h3 { margin: 0 0 14px; font-size: .9rem; font-weight: 800; }
+    .summary-group + .summary-group { border-top: 1px solid var(--line); margin-top: 17px; padding-top: 16px; }
+    .summary-title { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; font-size: .8rem; font-weight: 800; }
+    .category-row { display: grid; gap: 6px; margin-top: 11px; }
+    .category-meta { display: flex; justify-content: space-between; gap: 10px; font-size: .77rem; }
+    .category-meta span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .category-meta span:last-child { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .category-track { height: 7px; overflow: hidden; border-radius: 99px; background: var(--surface-soft); }
+    .category-track span { display: block; height: 100%; border-radius: 99px; }
+    .empty-state { padding: 30px 18px; color: var(--muted); text-align: center; font-size: .83rem; }
+    .empty-symbol { display: grid; place-items: center; width: 42px; height: 42px; margin: 0 auto 10px; border-radius: 14px; color: var(--accent); background: var(--accent-soft); font-size: 1.15rem; }
+    .data-tools { margin-top: 23px; padding: 14px 16px; border: 1px dashed var(--line); border-radius: 15px; color: var(--muted); font-size: .76rem; }
+    .data-tools summary { cursor: pointer; font-weight: 750; color: var(--ink); }
+    .data-tools p { margin: 9px 0; }
+    .data-tool-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .data-tool-actions button { min-height: 36px; padding: 0 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font-size: .76rem; font-weight: 700; }
+    .app-footer { margin: 17px 3px 0; color: var(--muted); font-size: .72rem; text-align: center; }
+    .bottom-nav { display: none; }
+    .toast { position: fixed; z-index: 30; left: 50%; bottom: calc(24px + var(--safe-bottom)); transform: translate(-50%, 18px); width: max-content; max-width: calc(100% - 32px); padding: 12px 17px; border-radius: 13px; color: #fff; background: #20394b; box-shadow: 0 10px 30px rgba(0,0,0,.2); font-size: .82rem; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    dialog { width: min(92vw, 410px); padding: 22px; border: 1px solid var(--line); border-radius: 21px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); }
+    dialog::backdrop { background: rgba(8, 18, 28, .5); backdrop-filter: blur(3px); }
+    dialog h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    dialog p { margin: 0 0 17px; color: var(--muted); font-size: .84rem; }
+    .dialog-actions { display: grid; gap: 8px; }
+    .dialog-actions button { width: 100%; }
+    .category-manager { width: min(92vw, 470px); max-height: min(82vh, 680px); overflow-y: auto; }
+    .category-add { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; margin: 14px 0; }
+    .category-add input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--surface-soft); }
+    .category-add button { min-height: 44px; padding: 0 15px; border: 0; border-radius: 11px; color: #fff; background: var(--accent); font-size: .8rem; font-weight: 800; }
+    .category-manager-list { display: grid; gap: 7px; max-height: 42vh; overflow-y: auto; }
+    .category-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 7px 9px 7px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: var(--surface-soft); font-size: .82rem; font-weight: 650; }
+    .category-item span { min-width: 0; overflow-wrap: anywhere; }
+    .category-item button { flex: 0 0 auto; min-height: 34px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--expense) 30%, var(--line)); border-radius: 9px; color: var(--expense); background: var(--surface); font-size: .73rem; font-weight: 750; }
+    [hidden] { display: none !important; }
+    @media (max-width: 820px) {
+      .app-shell { width: min(100% - 30px, 700px); }
+      .overview-grid { grid-template-columns: 1fr; }
+      .month-metrics { grid-template-columns: 1fr 1fr; }
+      .content-grid { grid-template-columns: 1fr; }
+      .summary-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+      .summary-panel h3 { grid-column: 1 / -1; }
+      .summary-group + .summary-group { border-top: 0; border-left: 1px solid var(--line); margin: 0; padding: 0 0 0 16px; }
+    }
+    @media (max-width: 600px) {
+      html { scroll-padding-top: 12px; }
+      body { padding-bottom: calc(88px + var(--safe-bottom)); }
+      .app-shell { width: 100%; padding: 17px 15px 30px; }
+      .app-header { margin: 0 1px 19px; }
+      .brand-mark { width: 42px; height: 42px; flex-basis: 42px; border-radius: 14px; }
+      h1 { font-size: 1.04rem; }
+      .brand-subtitle { font-size: .74rem; }
+      .quiet-button { width: 42px; padding: 0; font-size: 0; }
+      .quiet-button .button-icon { font-size: 1.05rem; }
+      .month-toolbar { margin-bottom: 12px; }
+      .period-switcher { gap: 5px; }
+      .period-switcher strong { min-width: 133px; font-size: .9rem; }
+      .icon-button { width: 38px; min-height: 38px; border-radius: 12px; }
+      .today-button { font-size: .78rem; }
+      .overview-grid { gap: 10px; margin-bottom: 12px; }
+      .balance-card { padding: 20px; border-radius: 21px; }
+      .balance-value { margin: 7px 0 13px; font-size: clamp(2.05rem, 10vw, 2.7rem); }
+      .month-metrics { gap: 10px; }
+      .metric-card { min-height: 92px; padding: 14px; border-radius: 17px; }
+      .metric-label { font-size: .74rem; }
+      .metric-value { font-size: 1.04rem; }
+      .section-heading { margin: 23px 2px 10px; }
+      .section-heading h2 { font-size: .98rem; }
+      .section-hint { font-size: .74rem; }
+      .week-card { padding: 17px 16px 15px; border-radius: 19px; }
+      .week-total-row { margin: 12px 0 10px; }
+      .week-chart { gap: 5px; }
+      .day-column { grid-template-rows: 37px auto; }
+      .day-track { height: 37px; }
+      .day-bar { width: 16px; }
+      .day-label { font-size: .66rem; }
+      .form-panel { padding: 17px 15px; border-radius: 20px; }
+      .form-head { margin-bottom: 14px; }
+      .form-head h2 { font-size: 1rem; }
+      .form-head p { max-width: 250px; font-size: .75rem; }
+      .type-switch { margin-bottom: 13px; }
+      .form-grid { grid-template-columns: 1fr; gap: 11px; }
+      .field input { min-height: 50px; border-radius: 12px; }
+      .amount-input { font-size: 1.16rem; }
+      .form-row { gap: 10px; margin-top: 11px; }
+      .category-presets { gap: 6px; margin-top: 9px; }
+      .category-chip { min-height: 32px; padding: 5px 10px; font-size: .73rem; }
+      .form-actions { display: grid; grid-template-columns: 1fr auto; margin-top: 14px; }
+      .form-actions .primary-button { min-height: 51px; }
+      .form-actions .secondary-button, .form-actions .danger-button { padding: 0 13px; }
+      .content-grid { gap: 13px; }
+      .summary-panel { padding: 16px 14px; grid-template-columns: 1fr; }
+      .summary-panel h3 { margin-bottom: 12px; }
+      .summary-group + .summary-group { border-top: 1px solid var(--line); border-left: 0; margin-top: 16px; padding: 15px 0 0; }
+      .list-toolbar { align-items: stretch; flex-direction: column; gap: 9px; padding: 12px; }
+      .filter-tabs { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); width: 100%; }
+      .filter-tabs button { min-height: 39px; padding: 0 6px; font-size: .72rem; }
+      .period-custom { padding: 11px 12px; gap: 8px; }
+      .period-custom input { min-height: 44px; font-size: .76rem; }
+      .category-manager { padding: 19px 16px; border-radius: 19px; }
+      .category-add { grid-template-columns: minmax(0,1fr) auto; }
+      .search-input { width: 100%; min-height: 41px; }
+      .transaction { grid-template-columns: 36px minmax(0,1fr) auto; gap: 9px; padding: 12px; }
+      .transaction-icon { width: 36px; height: 36px; border-radius: 11px; }
+      .transaction-info strong { font-size: .83rem; }
+      .transaction-info small { font-size: .7rem; }
+      .transaction-value { grid-column: 3; grid-row: 1; font-size: .8rem; }
+      .row-actions { grid-column: 2 / -1; justify-content: flex-end; margin-top: -5px; }
+      .row-actions button { width: 35px; height: 33px; background: var(--surface-soft); }
+      .data-tools { margin-top: 18px; }
+      .bottom-nav {
+        position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
+        display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center;
+        min-height: calc(66px + var(--safe-bottom)); padding: 7px 18px calc(7px + var(--safe-bottom));
+        border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 93%, transparent);
+        backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      }
+      .bottom-nav button { display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 48px; border: 0; color: var(--muted); background: transparent; font-size: .66rem; font-weight: 750; }
+      .bottom-nav button .nav-icon { font-size: 1.18rem; line-height: 1.15; }
+      .bottom-nav button.active { color: var(--accent); }
+      .bottom-nav button.add-nav .nav-icon { display: grid; place-items: center; width: 42px; height: 42px; margin-top: -22px; border-radius: 15px; color: #fff; background: var(--accent); box-shadow: 0 7px 16px rgba(50,107,145,.25); font-size: 1.45rem; }
+      .bottom-nav button.add-nav { color: var(--accent); }
+      .toast { bottom: calc(78px + var(--safe-bottom)); }
+    }
+    @media (max-width: 370px) {
+      .app-shell { padding-right: 11px; padding-left: 11px; }
+      .period-switcher strong { min-width: 116px; font-size: .84rem; }
+      .today-button { padding-left: 5px; }
+      .week-card { padding-right: 12px; padding-left: 12px; }
+      .form-panel { padding-right: 12px; padding-left: 12px; }
+      .transaction { padding-right: 9px; padding-left: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 9 12l3.2 3.2L20 7.5"/><path d="M14.5 7.5H20v5.5"/></svg>
+        </div>
+        <div><h1>Finanças da Casa</h1><div class="brand-subtitle">Seu dinheiro, em ordem.</div></div>
+      </div>
+      <div class="header-actions">
+        <button class="quiet-button" id="installButton" type="button" aria-label="Instalar aplicativo"><span class="button-icon" aria-hidden="true">⇩</span> Instalar</button>
+        <button class="icon-button" id="themeToggle" type="button" aria-label="Alternar tema" title="Alternar tema">☾</button>
+      </div>
+    </header>
+
+    <div class="month-toolbar" id="overviewSection">
+      <div class="period-switcher">
+        <button class="icon-button" id="prevMonth" type="button" aria-label="Mês anterior">‹</button>
+        <strong id="monthLabel"></strong>
+        <button class="icon-button" id="nextMonth" type="button" aria-label="Próximo mês">›</button>
+      </div>
+      <button class="today-button" id="currentMonthButton" type="button">Mês atual</button>
+    </div>
+
+    <div class="estimate-banner" id="estimateBanner" role="status">ⓘ <span>Este mês é futuro. Os valores exibidos são estimativas baseadas nos lançamentos programados e recorrências; confirme os valores quando ocorrerem.</span></div>
+
+    <section class="overview-grid" aria-label="Resumo financeiro do mês">
+      <article class="panel balance-card" id="balanceCard" aria-live="polite">
+        <div class="balance-label">Saldo do mês</div>
+        <div class="balance-value" id="balance">R$ 0,00</div>
+        <div class="balance-caption" id="balanceCaption">Total de entradas menos saídas</div>
+      </article>
+      <div class="month-metrics">
+        <article class="panel metric-card">
+          <div class="metric-label"><span class="metric-dot" style="background:var(--income)"></span>Entradas</div>
+          <div class="metric-value income-text" id="incomeTotal">R$ 0,00</div>
+        </article>
+        <article class="panel metric-card">
+          <div class="metric-label"><span class="metric-dot" style="background:var(--expense)"></span>Saídas</div>
+          <div class="metric-value expense-text" id="expenseTotal">R$ 0,00</div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="weekHeading">
+      <div class="section-heading"><div><h2 id="weekHeading">Acompanhamento semanal</h2><div class="section-hint">Veja quanto saiu ao longo da semana.</div></div></div>
+      <article class="panel week-card">
+        <div class="week-top">
+          <div><div class="week-title" id="weekTitle">Esta semana</div><div class="week-dates" id="weekDates"></div></div>
+          <div class="week-navigation">
+            <button class="icon-button" id="prevWeek" type="button" aria-label="Semana anterior">‹</button>
+            <button class="icon-button" id="nextWeek" type="button" aria-label="Próxima semana">›</button>
+          </div>
+        </div>
+        <div class="week-total-row"><div class="week-total expense-text" id="weekExpense">R$ 0,00</div><div class="week-count" id="weekCount">0 gastos registrados</div></div>
+        <div class="week-chart" id="weekChart" aria-label="Gastos por dia da semana"></div>
+      </article>
+    </section>
+
+    <section id="entrySection" aria-labelledby="formTitle">
+      <div class="section-heading"><div><h2 id="formTitle">Adicionar lançamento</h2><div class="section-hint">Registre os gastos conforme for conferindo.</div></div></div>
+      <article class="panel form-panel">
+        <div class="form-head"><div><h2>Novo lançamento</h2><p>Preencha os dados e salve. O próximo registro já fica pronto.</p></div></div>
+        <form id="transactionForm" novalidate>
+          <div class="type-switch" role="group" aria-label="Tipo de lançamento">
+            <button type="button" data-type="out" class="active" aria-pressed="true">− Despesa</button>
+            <button type="button" data-type="in" aria-pressed="false">＋ Entrada</button>
+          </div>
+          <div class="form-grid">
+            <label class="field">Descrição do gasto ou entrada *
+              <input id="description" maxlength="60" required placeholder="Ex.: Compra no mercado" autocomplete="off">
+            </label>
+            <label class="field">Valor (R$) *
+              <input class="amount-input" id="amount" required inputmode="decimal" placeholder="0,00" autocomplete="off">
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="field">Categoria *
+              <input id="category" maxlength="30" required placeholder="Ex.: Alimentação" autocomplete="off">
+            </label>
+            <label class="field">Data do gasto *
+              <input id="date" type="date" required>
+            </label>
+          </div>
+          <div class="category-presets" id="categoryPresets" aria-label="Sugestões de categoria"></div>
+          <div class="manage-categories"><button type="button" id="manageCategories">＋ Gerenciar categorias</button></div>
+          <details class="advanced-options" id="advancedOptions">
+            <summary>Opções adicionais · lançamento recorrente</summary>
+            <div class="advanced-content">
+              <label class="inline-check"><input type="checkbox" id="recurring"> Repetir este lançamento mensalmente</label>
+              <div class="recurrence-fields" id="recurrenceFields">
+                <label class="field">Quantidade de meses
+                  <input id="months" type="number" min="2" max="360" value="12">
+                </label>
+                <label class="inline-check" style="align-self:end;padding-bottom:12px"><input type="checkbox" id="indefinite"> Sem prazo definido</label>
+              </div>
+            </div>
+          </details>
+          <p class="edit-note" id="editNote"></p>
+          <p class="form-message" id="formMessage" role="alert"></p>
+          <div class="form-actions">
+            <button class="primary-button" id="saveButton" type="submit">Salvar lançamento</button>
+            <button class="secondary-button" id="cancelEdit" type="button" hidden>Cancelar</button>
+            <button class="danger-button" id="deleteEditing" type="button" hidden>Excluir</button>
+          </div>
+        </form>
+      </article>
+    </section>
+
+    <div class="content-grid">
+      <section id="activitySection" aria-labelledby="transactionsHeading">
+        <div class="section-heading"><div><h2 id="transactionsHeading">Lançamentos</h2><div class="section-hint" id="listSubheading">Gastos e entradas desta semana.</div></div></div>
+        <article class="panel transactions-panel">
+          <div class="list-toolbar">
+            <div class="filter-tabs" role="group" aria-label="Filtrar lançamentos">
+              <button type="button" class="active" data-filter="week" aria-pressed="true">Esta semana</button>
+              <button type="button" data-filter="month" aria-pressed="false">Mês</button>
+              <button type="button" data-filter="custom" aria-pressed="false">Período</button>
+            </div>
+            <input class="search-input" id="search" type="search" placeholder="Buscar lançamento" aria-label="Buscar lançamento">
+          </div>
+          <div class="period-custom" id="customPeriod"><label>De<input type="date" id="periodStart"></label><label>Até<input type="date" id="periodEnd"></label></div>
+          <ul class="transaction-list" id="transactionList"></ul>
+        </article>
+      </section>
+
+      <section aria-labelledby="categoryHeading">
+        <div class="section-heading"><div><h2 id="categoryHeading">Resumo por categoria</h2><div class="section-hint">Distribuição no mês selecionado.</div></div></div>
+        <article class="panel summary-panel" id="categorySummary"><h3>Despesas e entradas</h3></article>
+      </section>
+    </div>
+
+    <details class="data-tools">
+      <summary>Segurança e cópia dos dados</summary>
+      <p>Os lançamentos ficam salvos neste navegador. Exporte uma cópia de segurança regularmente, especialmente antes de trocar de aparelho ou limpar os dados do navegador.</p>
+      <div class="data-tool-actions">
+        <button type="button" id="exportBackup">⇩ Exportar backup</button>
+        <button type="button" id="importBackupButton">＋ Restaurar backup</button>
+        <input type="file" id="importBackup" accept="application/json,.json" hidden>
+      </div>
+    </details>
+    <footer class="app-footer">Finanças da Casa · Seus registros permanecem neste dispositivo.</footer>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="active" data-scroll="overviewSection"><span class="nav-icon">⌂</span>Resumo</button>
+    <button type="button" class="add-nav" data-scroll="entrySection"><span class="nav-icon">＋</span>Lançar</button>
+    <button type="button" data-scroll="activitySection"><span class="nav-icon">▤</span>Registros</button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="deleteDialog">
+    <h3>Excluir lançamento?</h3>
+    <p id="deleteMessage"></p>
+    <div class="dialog-actions">
+      <button class="secondary-button" id="deleteOnly" type="button">Somente esta ocorrência</button>
+      <button class="danger-button" id="deleteAll" type="button">Excluir toda a recorrência</button>
+      <button class="secondary-button" id="deleteCancel" type="button">Manter lançamento</button>
+    </div>
+  </dialog>
+
+  <dialog id="categoryDialog" class="category-manager">
+    <h3>Gerenciar categorias</h3>
+    <p>Adicione categorias para organizar entradas e despesas. Ao excluir uma categoria, os lançamentos antigos não são apagados; eles mantêm o nome salvo.</p>
+    <div class="category-add"><input id="newCategory" maxlength="30" placeholder="Nome da categoria"><button type="button" id="addCategory">Adicionar</button></div>
+    <div class="category-manager-list" id="categoryManagerList"></div>
+    <div class="dialog-actions" style="margin-top:16px"><button class="secondary-button" id="closeCategoryDialog" type="button">Fechar</button></div>
+  </dialog>
+
+  <dialog id="installDialog">
+    <h3>Adicione à tela inicial</h3>
+    <p id="installInstructions">No menu do navegador, escolha “Instalar aplicativo” ou “Adicionar à tela inicial”. Assim, a aplicação abre em uma janela própria, como um app.</p>
+    <div class="dialog-actions"><button class="primary-button" id="installDialogClose" type="button">Entendi</button></div>
+  </dialog>
+
+  <script>
+  "use strict";
+  const $ = id => document.getElementById(id);
+  // Mantém a mesma chave da versão anterior para preservar os lançamentos existentes.
+  const STORAGE_KEY = "fin-items";
+  const THEME_KEY = "fin-theme";
+  const CATEGORY_KEY = "fin-categories";
+  const brl = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const monthIndex = (year, month) => year * 12 + month;
+  const today = new Date();
+  const formatDate = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+  const parseLocalDate = value => { const [y,m,d] = value.split("-").map(Number); return new Date(y,m-1,d); };
+  const addDays = (date, days) => { const next = new Date(date); next.setDate(next.getDate()+days); return next; };
+  const startOfWeek = date => { const d = new Date(date.getFullYear(),date.getMonth(),date.getDate()); const day = (d.getDay()+6)%7; d.setDate(d.getDate()-day); return d; };
+  const sameDate = (a,b) => formatDate(a) === formatDate(b);
+  const defaultCategories = ["Mercado","Moradia","Contas","Transporte","Saúde","Lazer","Educação","Outros"];
+  let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  let selectedWeekStart = startOfWeek(today);
+  let transactions = loadTransactions();
+  let customCategories = loadCategories();
+  let type = "out";
+  let editingId = null;
+  let pendingDelete = null;
+  let currentFilter = "week";
+  let customPeriodStart = formatDate(startOfWeek(today));
+  let customPeriodEnd = formatDate(today);
+  let toastTimer = null;
+  let deferredInstallPrompt = null;
+
+  function loadTransactions() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed.filter(item => item && item.id && (item.type === "in" || item.type === "out") && typeof item.desc === "string" && typeof item.cat === "string" && Number.isFinite(Number(item.amount)) && item.date) : [];
+    } catch (error) { return []; }
+  }
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); return true; }
+    catch (error) { showToast("Não foi possível salvar. Exporte um backup e confira o espaço do navegador."); return false; }
+  }
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
+  }
+  function showToast(message) {
+    const toast = $("toast"); toast.textContent = message; toast.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+  }
+  function startMonth(item) { const [year,month] = item.date.split("-").map(Number); return monthIndex(year,month-1); }
+  function appearsInMonth(item,index) {
+    const start = startMonth(item);
+    if ((item.skip || []).includes(index)) return false;
+    return item.rec ? index >= start && (!item.months || index < start + item.months) : index === start;
+  }
+  function occurrenceForMonth(item, year, month) {
+    const index = monthIndex(year,month);
+    if (!appearsInMonth(item,index)) return null;
+    if (!item.rec) return { ...item, displayDate: item.date };
+    const originalDay = Number(item.date.slice(8,10));
+    const lastDay = new Date(year,month+1,0).getDate();
+    const occurrenceDate = `${year}-${String(month+1).padStart(2,"0")}-${String(Math.min(originalDay,lastDay)).padStart(2,"0")}`;
+    return { ...item, displayDate: occurrenceDate };
+  }
+  function monthEntries() {
+    return transactions.map(item => occurrenceForMonth(item,currentMonth.getFullYear(),currentMonth.getMonth())).filter(Boolean);
+  }
+  function entriesBetween(start,end) {
+    const results = [];
+    const firstMonth = new Date(start.getFullYear(),start.getMonth(),1);
+    const lastMonth = new Date(end.getFullYear(),end.getMonth(),1);
+    for (let cursor = firstMonth; cursor <= lastMonth; cursor = new Date(cursor.getFullYear(),cursor.getMonth()+1,1)) {
+      const year = cursor.getFullYear(), month = cursor.getMonth();
+      transactions.forEach(item => {
+        const occurrence = occurrenceForMonth(item,year,month);
+        if (occurrence && occurrence.displayDate >= formatDate(start) && occurrence.displayDate <= formatDate(end)) results.push(occurrence);
+      });
+    }
+    return results;
+  }
+  function weekEntries() { return entriesBetween(selectedWeekStart,addDays(selectedWeekStart,6)); }
+  function activeEntries() {
+    if(currentFilter==="week") return weekEntries();
+    if(currentFilter==="custom") {
+      if(!customPeriodStart||!customPeriodEnd||customPeriodStart>customPeriodEnd) return [];
+      return entriesBetween(parseLocalDate(customPeriodStart),parseLocalDate(customPeriodEnd));
+    }
+    return monthEntries();
+  }
+  function loadCategories() {
+    try { const saved=JSON.parse(localStorage.getItem(CATEGORY_KEY)||"null"); return Array.isArray(saved)?saved.filter(x=>typeof x==="string"&&x.trim()):[...new Set([...defaultCategories,...transactions.map(item=>item.cat).filter(Boolean)])]; }
+    catch(error) { return [...defaultCategories]; }
+  }
+  function persistCategories() { try { localStorage.setItem(CATEGORY_KEY,JSON.stringify(customCategories)); return true; } catch(error) { showToast("Não foi possível salvar as categorias."); return false; } }
+  function categories() { return [...customCategories].sort((a,b)=>a.localeCompare(b,"pt-BR")); }
+  function renderCategoryPresets() {
+    const current = $("category").value.trim().toLocaleLowerCase("pt-BR");
+    const merged = categories();
+    $("categoryPresets").innerHTML = merged.map(name => `<button class="category-chip ${name.toLocaleLowerCase("pt-BR")===current?"selected":""}" type="button" data-category="${escapeHTML(name)}">${escapeHTML(name)}</button>`).join("");
+  }
+  function setType(nextType) {
+    type = nextType;
+    document.querySelectorAll(".type-switch button").forEach(button => {
+      const active = button.dataset.type === type;
+      button.classList.toggle("active",active); button.setAttribute("aria-pressed",String(active));
+    });
+    renderCategoryPresets();
+  }
+  function renderWeek() {
+    const end = addDays(selectedWeekStart,6);
+    const fmt = date => date.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(" de "," ");
+    $("weekDates").textContent = `${fmt(selectedWeekStart)} – ${fmt(end)}`;
+    $("weekTitle").textContent = sameDate(selectedWeekStart,startOfWeek(today)) ? "Esta semana" : "Semana selecionada";
+    const items = weekEntries();
+    const expenses = items.filter(item=>item.type==="out");
+    const total = expenses.reduce((sum,item)=>sum+Number(item.amount),0);
+    $("weekExpense").textContent = brl(total);
+    $("weekCount").textContent = `${expenses.length} ${expenses.length===1?"gasto registrado":"gastos registrados"}`;
+    const daily = Array.from({length:7},(_,i)=>({date:addDays(selectedWeekStart,i),value:0}));
+    expenses.forEach(item=>{ const date=parseLocalDate(item.displayDate || item.date); const index=Math.round((date-selectedWeekStart)/86400000); if(index>=0&&index<7) daily[index].value+=Number(item.amount); });
+    const max = Math.max(...daily.map(day=>day.value),1);
+    const shortDays = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+    $("weekChart").innerHTML = daily.map((day,i)=>`<div class="day-column ${sameDate(day.date,today)?"today":""}"><div class="day-track"><span class="day-bar" style="height:${day.value?Math.max(7,day.value/max*100):3}%" title="${brl(day.value)}"></span></div><span class="day-label">${shortDays[i]}</span></div>`).join("");
+  }
+  function renderSummary(list) {
+    const groups = ["out","in"].map(kind=>{
+      const totals=new Map();
+      list.filter(item=>item.type===kind).forEach(item=>totals.set(item.cat,(totals.get(item.cat)||0)+Number(item.amount)));
+      const entries=[...totals.entries()].sort((a,b)=>b[1]-a[1]);
+      const total=entries.reduce((sum,entry)=>sum+entry[1],0);
+      if(!entries.length)return "";
+      const title=kind==="out"?"Despesas por categoria":"Entradas por categoria";
+      const color=kind==="out"?"var(--expense)":"var(--income)";
+      return `<div class="summary-group"><div class="summary-title"><span>${title}</span><span>${brl(total)}</span></div>${entries.map(([name,value])=>`<div class="category-row"><div class="category-meta"><span>${escapeHTML(name)}</span><span>${brl(value)} · ${Math.round(value/total*100)}%</span></div><div class="category-track"><span style="width:${value/total*100}%;background:${color}"></span></div></div>`).join("")}</div>`;
+    }).filter(Boolean);
+    $("categorySummary").innerHTML = `<h3>Despesas e entradas</h3>${groups.length?groups.join(""):`<div class="empty-state">Ainda não há lançamentos neste mês.</div>`}`;
+  }
+  function renderTransactions() {
+    const query=$("search").value.trim().toLocaleLowerCase("pt-BR");
+    const list=activeEntries().sort((a,b)=>(b.displayDate||b.date).localeCompare(a.displayDate||a.date)||a.desc.localeCompare(b.desc,"pt-BR"));
+    const filtered=list.filter(item=>`${item.desc} ${item.cat}`.toLocaleLowerCase("pt-BR").includes(query));
+    $("listSubheading").textContent=currentFilter==="week"?"Gastos e entradas desta semana.":currentFilter==="custom"?`Lançamentos de ${customPeriodStart.split("-").reverse().join("/")} a ${customPeriodEnd.split("-").reverse().join("/")}.`:"Todos os lançamentos do mês selecionado.";
+    $("customPeriod").classList.toggle("show",currentFilter==="custom");
+    document.querySelectorAll(".filter-tabs button").forEach(button=>{const active=button.dataset.filter===currentFilter;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));});
+    $("transactionList").innerHTML=filtered.length?filtered.map(item=>{
+      const date=parseLocalDate(item.displayDate||item.date);
+      const dateLabel=date.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(" de "," ");
+      const recurrence=item.rec?" · recorrente":"";
+      const symbol=item.type==="in"?"＋":"−";
+      return `<li class="transaction"><span class="transaction-icon ${item.type==="in"?"income":""}" aria-hidden="true">${symbol}</span><div class="transaction-info"><strong>${escapeHTML(item.desc)}</strong><small>${dateLabel} · ${escapeHTML(item.cat)}${recurrence}${(item.displayDate||item.date)>formatDate(today)?' · <span class="future-tag">PREVISTO</span>':''}</small></div><span class="transaction-value ${item.type==="in"?"income-text":"expense-text"}">${item.type==="in"?"+":"−"} ${brl(item.amount)}</span><div class="row-actions"><button type="button" data-edit="${escapeHTML(item.id)}" aria-label="Editar ${escapeHTML(item.desc)}" title="Editar">✎</button><button type="button" data-delete="${escapeHTML(item.id)}" data-date="${escapeHTML(item.displayDate||item.date)}" aria-label="Excluir ${escapeHTML(item.desc)}" title="Excluir">×</button></div></li>`;
+    }).join(""):`<li class="empty-state"><span class="empty-symbol">${query?"⌕":"＋"}</span>${query?"Nenhum lançamento encontrado para essa busca.":currentFilter==="week"?"Nenhum lançamento nesta semana. Adicione os gastos que já aconteceram.":"Nenhum lançamento neste mês."}</li>`;
+  }
+  function render() {
+    const list=monthEntries();
+    const income=list.filter(item=>item.type==="in").reduce((sum,item)=>sum+Number(item.amount),0);
+    const expense=list.filter(item=>item.type==="out").reduce((sum,item)=>sum+Number(item.amount),0);
+    const balance=income-expense;
+    $("monthLabel").textContent=currentMonth.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+    const isFutureMonth=monthIndex(currentMonth.getFullYear(),currentMonth.getMonth())>monthIndex(today.getFullYear(),today.getMonth());
+    $("estimateBanner").classList.toggle("show",isFutureMonth);
+    $("balanceCaption").textContent=isFutureMonth?"Projeção de entradas e saídas programadas.":balance<0?"As saídas estão acima das entradas.":"Entradas menos saídas no mês selecionado.";
+    $("balance").innerHTML=`${brl(balance)}${isFutureMonth?' <span class="future-tag">ESTIMATIVA</span>':""}`;
+    $("balanceCard").classList.toggle("negative",balance<0);
+
+    $("incomeTotal").textContent=brl(income);
+    $("expenseTotal").textContent=brl(expense);
+    renderWeek(); renderSummary(list); renderTransactions();
+  }
+  function clearMessage(){ $("formMessage").textContent=""; $("formMessage").classList.remove("show"); }
+  function showMessage(message){ $("formMessage").textContent=message; $("formMessage").classList.add("show"); }
+  function resetForm() {
+    editingId=null; $("transactionForm").reset(); $("date").value=formatDate(today); $("months").value=12; $("months").disabled=false;
+    $("recurrenceFields").classList.remove("show"); $("advancedOptions").open=false;
+    $("formTitle").textContent="Adicionar lançamento"; $("saveButton").textContent="Salvar lançamento";
+    $("cancelEdit").hidden=true; $("deleteEditing").hidden=true; $("editNote").classList.remove("show");
+    clearMessage(); setType("out"); $("category").value=""; renderCategoryPresets();
+  }
+  function editTransaction(item) {
+    const original=transactions.find(entry=>entry.id===item.id); if(!original)return;
+    editingId=original.id; setType(original.type); $("description").value=original.desc;
+    $("amount").value=Number(original.amount).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+    $("date").value=original.date; $("category").value=original.cat; $("recurring").checked=Boolean(original.rec);
+    $("recurrenceFields").classList.toggle("show",Boolean(original.rec)); $("advancedOptions").open=Boolean(original.rec);
+    $("months").value=original.months||12; $("indefinite").checked=Boolean(original.rec&&!original.months); $("months").disabled=$("indefinite").checked;
+    $("formTitle").textContent="Editar lançamento"; $("saveButton").textContent="Salvar alterações";
+    $("cancelEdit").hidden=false; $("deleteEditing").hidden=false;
+    $("editNote").textContent=original.rec?"Este lançamento é recorrente. As alterações serão aplicadas a toda a série.":"";
+    $("editNote").classList.toggle("show",Boolean(original.rec)); clearMessage(); renderCategoryPresets();
+    $("entrySection").scrollIntoView({behavior:"smooth",block:"start"}); setTimeout(()=>$("description").focus({preventScroll:true}),250);
+  }
+  function requestDelete(item,displayDate) {
+    if(!item)return; pendingDelete={...item,displayDate:displayDate||item.displayDate||item.date};
+    const recurring=Boolean(item.rec);
+    $("deleteMessage").textContent=recurring?`“${item.desc}” faz parte de uma recorrência. Deseja excluir apenas esta ocorrência ou toda a série?`:`Deseja excluir “${item.desc}”?`;
+    $("deleteOnly").hidden=!recurring; $("deleteAll").textContent=recurring?"Excluir toda a recorrência":"Excluir lançamento";
+    $("deleteDialog").showModal();
+  }
+  function deleteAll() {
+    if(!pendingDelete)return; transactions=transactions.filter(item=>item.id!==pendingDelete.id); if(!persist())return;
+    if(editingId===pendingDelete.id)resetForm(); pendingDelete=null; $("deleteDialog").close(); render(); showToast("Lançamento excluído.");
+  }
+  function parseAmount(value) {
+    let normalized=value.trim().replace(/\s/g,"");
+    if(normalized.includes(","))normalized=normalized.replace(/\./g,"").replace(",",".");
+    const amount=Number(normalized); return Number.isFinite(amount)?amount:NaN;
+  }
+  document.querySelectorAll(".type-switch button").forEach(button=>button.addEventListener("click",()=>{setType(button.dataset.type);$("category").value="";renderCategoryPresets();}));
+  $("category").addEventListener("input",renderCategoryPresets);
+  $("categoryPresets").addEventListener("click",event=>{const button=event.target.closest("button[data-category]");if(!button)return;$("category").value=button.dataset.category;renderCategoryPresets();});
+  $("recurring").addEventListener("change",()=>$("recurrenceFields").classList.toggle("show",$("recurring").checked));
+  $("indefinite").addEventListener("change",()=>$("months").disabled=$("indefinite").checked);
+  $("transactionForm").addEventListener("submit",event=>{
+    event.preventDefault(); clearMessage();
+    const desc=$("description").value.trim(),cat=$("category").value.trim(),amount=parseAmount($("amount").value),date=$("date").value;
+    if(!desc||!cat||!date||!(amount>0)){showMessage("Preencha descrição, valor, categoria e data. O valor deve ser maior que zero.");return;}
+    if($("recurring").checked&&!$("indefinite").checked&&(+$("months").value<2||+$("months").value>360)){showMessage("A recorrência deve ter entre 2 e 360 meses.");return;}
+    const existingCategory=categories().find(value=>value.toLocaleLowerCase("pt-BR")===cat.toLocaleLowerCase("pt-BR"));
+    const data={type,desc,amount,date,cat:existingCategory||cat,rec:$("recurring").checked,months:$("recurring").checked?($("indefinite").checked?0:Number($("months").value)):1};
+    const wasEditing=Boolean(editingId);
+    if(editingId){const existing=transactions.find(item=>item.id===editingId);if(existing)Object.assign(existing,data);}
+    else transactions.push({id:crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`,...data});
+    if(!persist())return;
+    const [year,month]=date.split("-").map(Number); currentMonth=new Date(year,month-1,1); selectedWeekStart=startOfWeek(parseLocalDate(date));
+    resetForm(); render(); showToast(wasEditing?"Alterações salvas.":"Lançamento salvo. Pode adicionar o próximo.");
+  });
+  $("transactionList").addEventListener("click",event=>{
+    const editButton=event.target.closest("[data-edit]"),deleteButton=event.target.closest("[data-delete]");
+    if(editButton){const item=activeEntries().find(entry=>entry.id===editButton.dataset.edit);if(item)editTransaction(item);}
+    if(deleteButton){const item=transactions.find(entry=>entry.id===deleteButton.dataset.delete);requestDelete(item,deleteButton.dataset.date);}
+  });
+  $("cancelEdit").addEventListener("click",resetForm);
+  $("deleteEditing").addEventListener("click",()=>requestDelete(transactions.find(item=>item.id===editingId)));
+  $("deleteOnly").addEventListener("click",()=>{
+    if(!pendingDelete)return; const date=parseLocalDate(pendingDelete.displayDate||pendingDelete.date); const index=monthIndex(date.getFullYear(),date.getMonth());
+    const original=transactions.find(item=>item.id===pendingDelete.id); if(original){original.skip=[...(original.skip||[]),index];if(!persist())return;}
+    pendingDelete=null;$("deleteDialog").close();if(editingId)resetForm();render();showToast("Esta ocorrência foi removida.");
+  });
+  $("deleteAll").addEventListener("click",deleteAll);
+  $("deleteCancel").addEventListener("click",()=>{$("deleteDialog").close();pendingDelete=null;});
+  $("prevMonth").addEventListener("click",()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()-1,1);currentFilter="month";render();});
+  $("nextMonth").addEventListener("click",()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+1,1);currentFilter="month";render();});
+  $("currentMonthButton").addEventListener("click",()=>{currentMonth=new Date(today.getFullYear(),today.getMonth(),1);currentFilter="month";render();});
+  $("prevWeek").addEventListener("click",()=>{selectedWeekStart=addDays(selectedWeekStart,-7);render();});
+  $("nextWeek").addEventListener("click",()=>{selectedWeekStart=addDays(selectedWeekStart,7);render();});
+  $("search").addEventListener("input",renderTransactions);
+  function renderCategoryManager() {
+    const list=categories();
+    $("categoryManagerList").innerHTML=list.length?list.map(name=>`<div class="category-item"><span>${escapeHTML(name)}</span><button type="button" data-remove-category="${escapeHTML(name)}">Excluir</button></div>`).join(""):'<div class="empty-state">Nenhuma categoria cadastrada.</div>';
+  }
+  $("manageCategories").addEventListener("click",()=>{renderCategoryManager();$("categoryDialog").showModal();});
+  $("closeCategoryDialog").addEventListener("click",()=>$("categoryDialog").close());
+  $("addCategory").addEventListener("click",()=>{
+    const name=$("newCategory").value.trim(); if(!name)return;
+    if(categories().some(item=>item.toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"))){showToast("Essa categoria já existe.");return;}
+    customCategories.push(name); if(!persistCategories())return; $("newCategory").value=""; renderCategoryManager(); renderCategoryPresets(); showToast("Categoria adicionada.");
+  });
+  $("newCategory").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();$("addCategory").click();}});
+  $("categoryManagerList").addEventListener("click",event=>{
+    const button=event.target.closest("[data-remove-category]"); if(!button)return;
+    const name=button.dataset.removeCategory;
+    if(!confirm(`Excluir a categoria “${name}” da lista? Os lançamentos existentes serão preservados.`))return;
+    customCategories=customCategories.filter(item=>item!==name); if(!persistCategories())return; renderCategoryManager(); renderCategoryPresets();
+    if($("category").value.toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"))$("category").value="";
+    showToast("Categoria excluída da lista.");
+  });
+  document.querySelectorAll(".filter-tabs button").forEach(button=>button.addEventListener("click",()=>{currentFilter=button.dataset.filter;renderTransactions();}));
+  $("periodStart").value=customPeriodStart; $("periodEnd").value=customPeriodEnd;
+  ["periodStart","periodEnd"].forEach(id=>$(id).addEventListener("change",()=>{
+    customPeriodStart=$("periodStart").value; customPeriodEnd=$("periodEnd").value;
+    if(customPeriodStart&&customPeriodEnd&&customPeriodStart>customPeriodEnd){showToast("A data inicial deve ser anterior à data final.");return;}
+    currentFilter="custom"; renderTransactions(); document.querySelectorAll(".filter-tabs button").forEach(button=>{const active=button.dataset.filter===currentFilter;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));});
+  }));
+
+  function applyTheme(theme){document.documentElement.dataset.theme=theme;$("themeToggle").textContent=theme==="dark"?"☀":"☾";$("themeToggle").setAttribute("aria-label",theme==="dark"?"Ativar tema claro":"Ativar tema escuro");try{localStorage.setItem(THEME_KEY,theme);}catch(error){}}
+  const savedTheme=(()=>{try{return localStorage.getItem(THEME_KEY);}catch(error){return null;}})();
+  applyTheme(savedTheme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+  $("themeToggle").addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
+
+  // Navegação inferior no celular: atalhos para as áreas principais.
+  document.querySelectorAll(".bottom-nav button").forEach(button=>button.addEventListener("click",()=>{
+    const target=$(button.dataset.scroll); if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+    document.querySelectorAll(".bottom-nav button").forEach(item=>item.classList.toggle("active",item===button));
+  }));
+
+  // Backup manual em JSON: importar substitui os registros locais após confirmação.
+  $("exportBackup").addEventListener("click",()=>{
+    const payload={app:"financas-da-casa",version:2,exportedAt:new Date().toISOString(),transactions,categories:customCategories};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const link=document.createElement("a");
+    link.href=url;link.download=`backup-financas-${formatDate(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);showToast("Backup exportado.");
+  });
+  $("importBackupButton").addEventListener("click",()=>$("importBackup").click());
+  $("importBackup").addEventListener("change",async event=>{
+    const file=event.target.files?.[0];if(!file)return;
+    try{const data=JSON.parse(await file.text());if(!data||!Array.isArray(data.transactions)||!data.transactions.every(item=>item&&item.id&&(item.type==="in"||item.type==="out")&&typeof item.desc==="string"&&typeof item.cat==="string"&&Number.isFinite(Number(item.amount))&&item.date))throw new Error("invalid");
+      if(confirm(`O backup contém ${data.transactions.length} lançamentos. A restauração substituirá os dados atuais deste navegador. Deseja continuar?`)){transactions=data.transactions;if(Array.isArray(data.categories))customCategories=data.categories;if(persist()&&persistCategories()){render();renderCategoryPresets();showToast("Backup restaurado.");}}
+    }catch(error){alert("Não foi possível restaurar. Selecione um backup JSON válido desta aplicação.");}
+    event.target.value="";
+  });
+
+  // Instalação PWA: usa o prompt nativo quando disponível e orienta nos demais navegadores.
+  window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();deferredInstallPrompt=event;$("installButton").hidden=false;});
+  window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;$("installButton").hidden=true;showToast("Aplicativo instalado com sucesso.");});
+  $("installButton").addEventListener("click",async()=>{
+    if(deferredInstallPrompt){deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;}
+    else $("installDialog").showModal();
+  });
+  $("installDialogClose").addEventListener("click",()=>$("installDialog").close());
+  if(window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone){$("installButton").hidden=true;}
+  if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+    window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(error=>console.warn("Falha ao registrar o service worker:",error)));
+  }
+  // Solicita armazenamento persistente quando o navegador oferece esse recurso; a decisão é dele.
+  if(navigator.storage?.persist){navigator.storage.persist().catch(()=>{});}
+
+  $("date").value=formatDate(today);
+  renderCategoryPresets();
+  render();
+  </script>
+</body>
+</html>
