@@ -69,11 +69,17 @@ O Supabase deve ter a tabela `public.user_finances` disponível pela Data API. S
 - O armazenamento atual mantém um documento JSON por conta. Evite editar a mesma conta simultaneamente em vários dispositivos, pois a sincronização é baseada na última gravação confirmada. Ao abrir em outro aparelho, a versão mais recente é carregada no login.
 - O PWA mantém o app shell e o SDK do Supabase em cache após um primeiro carregamento conectado. O primeiro login e a sincronização inicial exigem internet.
 
-## 6. Atualizar a aplicação
+## 6. Distribuir entradas entre saídas
+
+Na seção **Distribuir entradas**, selecione uma entrada do mês e informe quanto dela será destinado a cada despesa. É possível fazer pagamentos parciais, usar mais de uma entrada para completar uma mesma despesa e revisar distribuições já salvas.
+
+O botão **Sugerir melhor distribuição** prioriza os menores saldos em aberto, quitando o maior número possível de despesas integralmente com a entrada selecionada; se ainda sobrar dinheiro, ele abate parcialmente a próxima despesa. A sugestão pode ser ajustada antes de salvar. As distribuições ficam vinculadas à entrada e à ocorrência mensal, dentro dos dados dos lançamentos; por isso também são mantidas nos backups JSON e na sincronização do Supabase, sem alteração do SQL.
+
+## 7. Atualizar a aplicação
 
 Substitua os arquivos no repositório mantendo a mesma URL publicada. O `sw.js` tem uma nova versão de cache para que o navegador atualize o app shell. Depois da publicação, abra a aplicação com internet; no celular, feche e abra novamente o PWA se a interface antiga continuar em cache.
 
-## Segurança
+## 8. Segurança
 
 - RLS é obrigatória e está habilitada no SQL incluído.
 - A chave publishable/anon é pública por definição; a proteção dos registros vem das políticas RLS e do Supabase Auth.

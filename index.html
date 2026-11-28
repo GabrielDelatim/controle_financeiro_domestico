@@ -156,6 +156,28 @@
     .week-total { font-size: clamp(1.55rem, 4vw, 2rem); font-weight: 820; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
     .week-count { color: var(--muted); font-size: .8rem; }
     .week-chart { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); align-items: end; gap: 8px; min-height: 70px; }
+    .allocation-panel { padding: 20px 22px; }
+    .allocation-controls { display: grid; grid-template-columns: minmax(0,1fr) minmax(220px,.7fr); gap: 13px; align-items: end; }
+    .allocation-controls select { width: 100%; min-width: 0; min-height: 48px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface-soft); }
+    .allocation-balance { min-height: 48px; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 8px 13px; border: 1px solid color-mix(in srgb, var(--income) 28%, var(--line)); border-radius: 12px; color: var(--muted); background: var(--income-soft); font-size: .73rem; font-weight: 700; }
+    .allocation-balance strong { color: var(--income); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+    .allocation-insight { margin-top: 13px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--accent) 23%, var(--line)); border-radius: 12px; color: var(--accent-strong); background: var(--accent-soft); font-size: .78rem; }
+    .allocation-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 13px 0 0; }
+    .allocation-actions button { min-height: 40px; padding: 0 13px; border-radius: 11px; font-size: .78rem; }
+    .allocation-expenses { display: grid; gap: 8px; margin-top: 13px; }
+    .allocation-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(125px,155px); gap: 12px; align-items: center; padding: 12px 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); }
+    .allocation-row-info { min-width: 0; }
+    .allocation-row-info strong { display: block; overflow-wrap: anywhere; font-size: .83rem; }
+    .allocation-row-info small { display: block; margin-top: 3px; color: var(--muted); font-size: .72rem; line-height: 1.45; }
+    .allocation-row-info .allocation-status { display: inline-block; margin-top: 4px; color: var(--muted); font-size: .68rem; font-weight: 800; }
+    .allocation-row-info .allocation-status.paid { color: var(--income); }
+    .allocation-amount-wrap { display: grid; gap: 4px; color: var(--muted); font-size: .68rem; font-weight: 750; }
+    .allocation-amount { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); text-align: right; font-variant-numeric: tabular-nums; }
+    .allocation-amount:disabled { opacity: .65; background: var(--surface-soft); }
+    .allocation-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .allocation-totals { color: var(--muted); font-size: .77rem; line-height: 1.55; }
+    .allocation-totals strong { color: var(--ink); }
+    .allocation-footer .primary-button { min-height: 43px; }
     .day-column { display: grid; grid-template-rows: 42px auto; align-items: end; justify-items: center; gap: 6px; min-width: 0; }
     .day-track { display: flex; align-items: end; justify-content: center; width: 100%; height: 42px; }
     .day-bar { width: min(18px, 70%); min-height: 3px; border-radius: 7px 7px 3px 3px; background: #8bb5ca; transition: height .2s ease; }
@@ -306,6 +328,15 @@
       .section-heading h2 { font-size: .98rem; }
       .section-hint { font-size: .74rem; }
       .week-card { padding: 17px 16px 15px; border-radius: 19px; }
+      .allocation-panel { padding: 16px 14px; border-radius: 20px; }
+      .allocation-controls { grid-template-columns: 1fr; gap: 9px; }
+      .allocation-row { grid-template-columns: minmax(0,1fr) 112px; gap: 8px; padding: 10px; }
+      .allocation-row-info strong { font-size: .79rem; }
+      .allocation-row-info small { font-size: .68rem; }
+      .allocation-amount { min-height: 40px; padding: 7px; font-size: .8rem; }
+      .allocation-footer { align-items: stretch; }
+      .allocation-footer .primary-button { width: 100%; }
+      .allocation-actions button { flex: 1 1 auto; }
       .week-total-row { margin: 12px 0 10px; }
       .week-chart { gap: 5px; }
       .day-column { grid-template-rows: 37px auto; }
@@ -462,6 +493,28 @@
       </article>
     </section>
 
+    <section id="allocationSection" aria-labelledby="allocationHeading">
+      <div class="section-heading"><div><h2 id="allocationHeading">Distribuir entradas</h2><div class="section-hint">Escolha qual entrada vai pagar cada saída do mês.</div></div></div>
+      <article class="panel allocation-panel">
+        <div class="allocation-controls">
+          <label class="field" for="allocationIncome">Entrada que será distribuída
+            <select id="allocationIncome"><option value="">Nenhuma entrada neste mês</option></select>
+          </label>
+          <div class="allocation-balance"><span>Valor desta entrada</span><strong id="allocationIncomeValue">R$ 0,00</strong></div>
+        </div>
+        <div class="allocation-insight" id="allocationInsight">Selecione uma entrada para definir quais despesas ela vai cobrir. A sugestão automática prioriza quitar o maior número de despesas integralmente.</div>
+        <div class="allocation-actions">
+          <button class="primary-button" id="suggestAllocation" type="button">✦ Sugerir melhor distribuição</button>
+          <button class="secondary-button" id="clearAllocation" type="button" hidden>Limpar distribuição</button>
+        </div>
+        <div class="allocation-expenses" id="allocationExpenses"><div class="empty-state">Cadastre uma entrada e despesas para começar.</div></div>
+        <div class="allocation-footer">
+          <div class="allocation-totals" id="allocationTotals" aria-live="polite"></div>
+          <button class="primary-button" id="saveAllocation" type="button" disabled>Salvar distribuição</button>
+        </div>
+      </article>
+    </section>
+
     <section id="entrySection" aria-labelledby="formTitle">
       <div class="section-heading"><div><h2 id="formTitle">Adicionar lançamento</h2><div class="section-hint">Registre os gastos conforme for conferindo.</div></div></div>
       <article class="panel form-panel">
@@ -609,6 +662,7 @@
   let customPeriodEnd = formatDate(today);
   let toastTimer = null;
   let deferredInstallPrompt = null;
+  let selectedIncomeKey = null;
 
   // Supabase: o navegador usa apenas a chave pública (anon/publishable). RLS protege os dados.
   const SUPABASE_CONFIG = window.SUPABASE_CONFIG || {};
@@ -763,6 +817,227 @@
       return `<li class="transaction"><span class="transaction-icon ${item.type==="in"?"income":""}" aria-hidden="true">${symbol}</span><div class="transaction-info"><strong>${escapeHTML(item.desc)}</strong><small>${dateLabel} · ${escapeHTML(item.cat)}${recurrence}${(item.displayDate||item.date)>formatDate(today)?' · <span class="future-tag">PREVISTO</span>':''}</small></div><span class="transaction-value ${item.type==="in"?"income-text":"expense-text"}">${item.type==="in"?"+":"−"} ${brl(item.amount)}</span><div class="row-actions"><button type="button" data-edit="${escapeHTML(item.id)}" aria-label="Editar ${escapeHTML(item.desc)}" title="Editar">✎</button><button type="button" data-delete="${escapeHTML(item.id)}" data-date="${escapeHTML(item.displayDate||item.date)}" aria-label="Excluir ${escapeHTML(item.desc)}" title="Excluir">×</button></div></li>`;
     }).join(""):`<li class="empty-state"><span class="empty-symbol">${query?"⌕":"＋"}</span>${query?"Nenhum lançamento encontrado para essa busca.":currentFilter==="week"?"Nenhum lançamento nesta semana. Adicione os gastos que já aconteceram.":"Nenhum lançamento neste mês."}</li>`;
   }
+  function occurrenceKey(entry) {
+    return `${entry.id}::${entry.displayDate || entry.date}`;
+  }
+  function allocationListForIncome(entry) {
+    const source = transactions.find(item => item.id === entry.id);
+    const byDate = source?.distributionsByDate;
+    const list = byDate && typeof byDate === "object" ? byDate[entry.displayDate || entry.date] : null;
+    return Array.isArray(list) ? list.filter(item => item && item.expenseId && item.expenseDate && Number(item.amount) > 0) : [];
+  }
+  function allocationsFromOtherIncomes(entries, excludedIncomeKey) {
+    const validExpenses = new Set(entries.filter(item => item.type === "out").map(occurrenceKey));
+    const totals = new Map();
+    entries.filter(item => item.type === "in").forEach(income => {
+      if (occurrenceKey(income) === excludedIncomeKey) return;
+      allocationListForIncome(income).forEach(allocation => {
+        const key = `${allocation.expenseId}::${allocation.expenseDate}`;
+        if (!validExpenses.has(key)) return;
+        totals.set(key, (totals.get(key) || 0) + Math.round(Number(allocation.amount) * 100));
+      });
+    });
+    return totals;
+  }
+  function allocationMoneyInput(value) {
+    return Number(value || 0).toFixed(2).replace(".", ",");
+  }
+  function plannerContext() {
+    const entries = monthEntries();
+    const incomes = entries.filter(item => item.type === "in").sort((a,b) => (a.displayDate || a.date).localeCompare(b.displayDate || b.date) || a.desc.localeCompare(b.desc,"pt-BR"));
+    const expenses = entries.filter(item => item.type === "out").sort((a,b) => (a.displayDate || a.date).localeCompare(b.displayDate || b.date) || a.desc.localeCompare(b.desc,"pt-BR"));
+    if (!incomes.some(item => occurrenceKey(item) === selectedIncomeKey)) selectedIncomeKey = incomes[0] ? occurrenceKey(incomes[0]) : null;
+    const income = incomes.find(item => occurrenceKey(item) === selectedIncomeKey) || null;
+    return { entries, incomes, expenses, income };
+  }
+  function renderAllocationPlanner() {
+    const { entries, incomes, expenses, income } = plannerContext();
+    const select = $("allocationIncome");
+    select.innerHTML = incomes.length ? incomes.map(item => {
+      const date = parseLocalDate(item.displayDate || item.date).toLocaleDateString("pt-BR");
+      const key = occurrenceKey(item);
+      return `<option value="${escapeHTML(key)}">${escapeHTML(item.desc)} · ${date} · ${brl(item.amount)}</option>`;
+    }).join("") : '<option value="">Nenhuma entrada neste mês</option>';
+    select.disabled = !incomes.length;
+    $("suggestAllocation").disabled = !income || !expenses.length;
+    $("saveAllocation").disabled = true;
+    $("clearAllocation").hidden = true;
+
+    if (!income) {
+      $("allocationIncomeValue").textContent = brl(0);
+      $("allocationInsight").textContent = "Cadastre uma entrada no mês selecionado para começar a distribuir os valores.";
+      $("allocationExpenses").innerHTML = expenses.length
+        ? expenses.map(item => `<div class="allocation-row"><div class="allocation-row-info"><strong>${escapeHTML(item.desc)}</strong><small>${escapeHTML(item.cat)} · ${brl(item.amount)}</small></div><span class="allocation-status">Aguardando uma entrada</span></div>`).join("")
+        : '<div class="empty-state">Cadastre uma entrada e despesas para começar.</div>';
+      $("allocationTotals").textContent = "";
+      return;
+    }
+
+    select.value = selectedIncomeKey;
+    $("allocationIncomeValue").textContent = brl(income.amount);
+    const incomeAllocations = allocationListForIncome(income);
+    const thisIncomeMap = new Map(incomeAllocations.map(item => [`${item.expenseId}::${item.expenseDate}`, Number(item.amount)]));
+    const otherTotals = allocationsFromOtherIncomes(entries, selectedIncomeKey);
+    const rows = expenses.map(expense => {
+      const key = occurrenceKey(expense);
+      const alreadyFromOthers = (otherTotals.get(key) || 0) / 100;
+      const amountFromThis = thisIncomeMap.get(key) || 0;
+      const remainingForThis = Math.max(0, Number(expense.amount) - alreadyFromOthers);
+      const totalCovered = alreadyFromOthers + amountFromThis;
+      const paid = totalCovered >= Number(expense.amount) - 0.005;
+      const status = paid ? "Quitada" : totalCovered > 0 ? "Parcialmente coberta" : "Em aberto";
+      const dateLabel = parseLocalDate(expense.displayDate || expense.date).toLocaleDateString("pt-BR");
+      return `<div class="allocation-row" data-expense-key="${escapeHTML(key)}">
+        <div class="allocation-row-info">
+          <strong>${escapeHTML(expense.desc)}</strong>
+          <small>${escapeHTML(expense.cat)} · ${dateLabel}<br>Valor: ${brl(expense.amount)} · Outras entradas: ${brl(alreadyFromOthers)} · <span class="allocation-remaining">Falta: ${brl(Math.max(0, Number(expense.amount) - totalCovered))}</span></small>
+          <span class="allocation-status ${paid ? "paid" : ""}">${status}</span>
+        </div>
+        <label class="allocation-amount-wrap">Destinar desta entrada
+          <input class="allocation-amount" type="text" inputmode="decimal" autocomplete="off" value="${allocationMoneyInput(amountFromThis)}" data-expense-id="${escapeHTML(expense.id)}" data-expense-date="${escapeHTML(expense.displayDate || expense.date)}" data-max-cents="${Math.max(0, Math.round(remainingForThis * 100))}" aria-label="Valor desta entrada para ${escapeHTML(expense.desc)}" ${remainingForThis <= 0 && amountFromThis <= 0 ? "disabled" : ""}>
+        </label>
+      </div>`;
+    });
+    $("allocationExpenses").innerHTML = rows.length ? rows.join("") : '<div class="empty-state">Não há saídas cadastradas neste mês para receber esta entrada.</div>';
+    $("clearAllocation").hidden = !incomeAllocations.length;
+    $("allocationInsight").textContent = "Informe quanto desta entrada será destinado a cada saída. Você pode quitar uma despesa inteira ou fazer um pagamento parcial.";
+    updateAllocationDraftSummary();
+  }
+  function readAllocationDraft() {
+    const context = plannerContext();
+    if (!context.income) return { context, draft: [], invalid: false, totalCents: 0, settledCount: 0, invalidReason: "" };
+    const otherTotals = allocationsFromOtherIncomes(context.entries, selectedIncomeKey);
+    const expensesByKey = new Map(context.expenses.map(item => [occurrenceKey(item), item]));
+    const draft = [];
+    let totalCents = 0;
+    let invalidReason = "";
+    $("allocationExpenses").querySelectorAll(".allocation-amount").forEach(input => {
+      const raw = input.value.trim();
+      const amount = raw === "" ? 0 : parseAmount(raw);
+      if (!Number.isFinite(amount) || amount < 0) {
+        invalidReason = "Informe valores válidos e não negativos.";
+        return;
+      }
+      const cents = Math.round(amount * 100);
+      const maxCents = Number(input.dataset.maxCents || 0);
+      if (cents > maxCents) invalidReason = "Uma distribuição ultrapassa o saldo que falta nessa saída.";
+      totalCents += cents;
+      const key = `${input.dataset.expenseId}::${input.dataset.expenseDate}`;
+      const expense = expensesByKey.get(key);
+      if (expense) draft.push({ expenseId: expense.id, expenseDate: expense.displayDate || expense.date, amount: cents / 100, cents, otherCents: otherTotals.get(key) || 0, expenseCents: Math.round(Number(expense.amount) * 100) });
+    });
+    if (totalCents > Math.round(Number(context.income.amount) * 100)) invalidReason = "A soma destinada não pode ser maior que o valor da entrada.";
+    const draftByKey = new Map(draft.map(item => [`${item.expenseId}::${item.expenseDate}`, item.cents]));
+    const settledCount = context.expenses.filter(expense => {
+      const key = occurrenceKey(expense);
+      const otherCents = otherTotals.get(key) || 0;
+      const ownCents = draftByKey.get(key) || 0;
+      return otherCents + ownCents >= Math.round(Number(expense.amount) * 100);
+    }).length;
+    $("allocationExpenses").querySelectorAll(".allocation-row[data-expense-key]").forEach(row => {
+      const expense = context.expenses.find(item => occurrenceKey(item) === row.dataset.expenseKey);
+      if (!expense) return;
+      const coveredCents = (otherTotals.get(row.dataset.expenseKey) || 0) + (draftByKey.get(row.dataset.expenseKey) || 0);
+      const totalCentsForExpense = Math.round(Number(expense.amount) * 100);
+      const status = row.querySelector(".allocation-status");
+      if (!status) return;
+      const paid = coveredCents >= totalCentsForExpense;
+      status.textContent = paid ? "Quitada" : coveredCents > 0 ? "Parcialmente coberta" : "Em aberto";
+      status.classList.toggle("paid", paid);
+      const remainingLabel = row.querySelector(".allocation-remaining");
+      if (remainingLabel) remainingLabel.textContent = `Falta: ${brl(Math.max(0, totalCentsForExpense - coveredCents) / 100)}`;
+    });
+    return { context, draft, invalid: Boolean(invalidReason), totalCents, settledCount, invalidReason };
+  }
+  function updateAllocationDraftSummary() {
+    const { context, draft, invalid, totalCents, settledCount, invalidReason } = readAllocationDraft();
+    if (!context.income) {
+      $("allocationTotals").textContent = "";
+      $("saveAllocation").disabled = true;
+      return;
+    }
+    const incomeCents = Math.round(Number(context.income.amount) * 100);
+    const leftCents = incomeCents - totalCents;
+    const text = `<strong>Distribuído: ${brl(totalCents / 100)}</strong> · Não destinado: ${brl(leftCents / 100)}<br>${settledCount} de ${context.expenses.length} saídas ficarão quitadas com esta distribuição.`;
+    $("allocationTotals").innerHTML = text;
+    $("saveAllocation").disabled = invalid;
+    if (invalidReason) $("allocationInsight").textContent = invalidReason;
+    else if (leftCents < 0) $("allocationInsight").textContent = "A soma destinada ultrapassa o valor desta entrada.";
+  }
+  function buildBestDistribution(expenses, otherTotals, budgetCents) {
+    const candidates = expenses.map(expense => {
+      const key = occurrenceKey(expense);
+      const otherCents = otherTotals.get(key) || 0;
+      return { expense, key, remainingCents: Math.max(0, Math.round(Number(expense.amount) * 100) - otherCents) };
+    }).filter(item => item.remainingCents > 0).sort((a,b) => a.remainingCents - b.remainingCents || (a.expense.displayDate || a.expense.date).localeCompare(b.expense.displayDate || b.expense.date));
+    let remainingBudget = budgetCents;
+    let fullySettled = 0;
+    let partiallyPaid = false;
+    const allocations = new Map();
+    for (const item of candidates) {
+      if (item.remainingCents <= remainingBudget) {
+        allocations.set(item.key, item.remainingCents);
+        remainingBudget -= item.remainingCents;
+        fullySettled++;
+      } else {
+        if (remainingBudget > 0) {
+          allocations.set(item.key, remainingBudget);
+          partiallyPaid = true;
+          remainingBudget = 0;
+        }
+        break;
+      }
+    }
+    return { allocations, fullySettled, partiallyPaid, remainingBudget };
+  }
+  function suggestAllocation() {
+    const { entries, expenses, income } = plannerContext();
+    if (!income) return;
+    const otherTotals = allocationsFromOtherIncomes(entries, selectedIncomeKey);
+    const suggestion = buildBestDistribution(expenses, otherTotals, Math.round(Number(income.amount) * 100));
+    $("allocationExpenses").querySelectorAll(".allocation-amount").forEach(input => {
+      const key = `${input.dataset.expenseId}::${input.dataset.expenseDate}`;
+      input.value = allocationMoneyInput((suggestion.allocations.get(key) || 0) / 100);
+    });
+    updateAllocationDraftSummary();
+    const message = suggestion.fullySettled
+      ? `Sugestão: quitar ${suggestion.fullySettled} saída(s) integralmente${suggestion.partiallyPaid ? " e usar o restante para abater mais uma" : ""}.` 
+      : suggestion.partiallyPaid
+        ? "Nenhuma saída será quitada integralmente; a sugestão usa a entrada para abater a saída com menor saldo em aberto."
+        : "Não há saldo de saída para receber esta entrada.";
+    $("allocationInsight").textContent = `${message} Não destinado: ${brl(suggestion.remainingBudget / 100)}.`;
+  }
+  function saveAllocation() {
+    const result = readAllocationDraft();
+    const { income } = result.context;
+    if (!income) return;
+    if (result.invalid) {
+      $("allocationInsight").textContent = result.invalidReason || "Revise os valores informados.";
+      return;
+    }
+    const source = transactions.find(item => item.id === income.id);
+    if (!source) { showToast("Não foi possível localizar a entrada selecionada."); return; }
+    if (!source.distributionsByDate || typeof source.distributionsByDate !== "object" || Array.isArray(source.distributionsByDate)) source.distributionsByDate = {};
+    const dateKey = income.displayDate || income.date;
+    const allocations = result.draft.filter(item => item.cents > 0).map(item => ({ expenseId: item.expenseId, expenseDate: item.expenseDate, amount: item.amount }));
+    if (allocations.length) source.distributionsByDate[dateKey] = allocations;
+    else delete source.distributionsByDate[dateKey];
+    if (Object.keys(source.distributionsByDate).length === 0) delete source.distributionsByDate;
+    if (!persist()) return;
+    render();
+    showToast("Distribuição das entradas salva.");
+  }
+  function clearAllocation() {
+    const { income } = plannerContext();
+    if (!income) return;
+    const source = transactions.find(item => item.id === income.id);
+    if (!source?.distributionsByDate || typeof source.distributionsByDate !== "object" || Array.isArray(source.distributionsByDate)) return;
+    delete source.distributionsByDate[income.displayDate || income.date];
+    if (Object.keys(source.distributionsByDate).length === 0) delete source.distributionsByDate;
+    if (!persist()) return;
+    render();
+    showToast("Distribuição desta entrada removida.");
+  }
   function render() {
     const list=monthEntries();
     const income=list.filter(item=>item.type==="in").reduce((sum,item)=>sum+Number(item.amount),0);
@@ -777,7 +1052,7 @@
 
     $("incomeTotal").textContent=brl(income);
     $("expenseTotal").textContent=brl(expense);
-    renderWeek(); renderSummary(list); renderTransactions();
+    renderWeek(); renderSummary(list); renderTransactions(); renderAllocationPlanner();
   }
   function clearMessage(){ $("formMessage").textContent=""; $("formMessage").classList.remove("show"); }
   function setCloudStatus(label, state="local") {
@@ -1237,6 +1512,13 @@ Deseja importar esses dados para a conta atual?`);
   $("prevWeek").addEventListener("click",()=>{selectedWeekStart=addDays(selectedWeekStart,-7);render();});
   $("nextWeek").addEventListener("click",()=>{selectedWeekStart=addDays(selectedWeekStart,7);render();});
   $("search").addEventListener("input",renderTransactions);
+  $("allocationIncome").addEventListener("change", () => { selectedIncomeKey = $("allocationIncome").value || null; renderAllocationPlanner(); });
+  $("allocationExpenses").addEventListener("input", event => {
+    if (event.target.matches(".allocation-amount")) updateAllocationDraftSummary();
+  });
+  $("suggestAllocation").addEventListener("click", suggestAllocation);
+  $("saveAllocation").addEventListener("click", saveAllocation);
+  $("clearAllocation").addEventListener("click", clearAllocation);
   function renderCategoryManager() {
     const list=categories();
     $("categoryManagerList").innerHTML=list.length?list.map(name=>`<div class="category-item"><span>${escapeHTML(name)}</span><button type="button" data-remove-category="${escapeHTML(name)}">Excluir</button></div>`).join(""):'<div class="empty-state">Nenhuma categoria cadastrada.</div>';
@@ -1278,7 +1560,7 @@ Deseja importar esses dados para a conta atual?`);
 
   // Backup manual em JSON: importar substitui os registros locais após confirmação.
   $("exportBackup").addEventListener("click",()=>{
-    const payload={app:"financas-da-casa",version:3,exportedAt:new Date().toISOString(),transactions,categories:customCategories};
+    const payload={app:"financas-da-casa",version:4,exportedAt:new Date().toISOString(),transactions,categories:customCategories};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const link=document.createElement("a");
     link.href=url;link.download=`backup-financas-${formatDate(today)}.json`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);showToast("Backup exportado.");
   });

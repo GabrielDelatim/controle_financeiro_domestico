@@ -1,4 +1,4 @@
-const CACHE_NAME = "financas-da-casa-v6-supabase";
+const CACHE_NAME = "financas-da-casa-v7-distribuicao";
 const SUPABASE_SDK_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
 const APP_SHELL = [
   "./",
